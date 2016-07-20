@@ -1,0 +1,1416 @@
+% declare our document type
+\documentclass[12pt]{extarticle}
+
+%%%%%%%% PACKAGES NEEDED FOR THIS DOCUMENT
+
+% allow us to put pictures in the document
+\usepackage{graphicx}
+% this line lets us use larger fonts
+\usepackage{extsizes}
+% this allows us to create "slides" in the document
+\usepackage[many]{tcolorbox}
+% this line lets us caption images inside the "slides"
+% this is neccesary since the slide doesn't allow the use of
+% \figure{} inside
+\usepackage{caption}
+% allows use of courier font
+\usepackage{courier}
+% make the table of contents links like people are used to
+% the hidelinks parts hides link outlines
+\usepackage[hidelinks]{hyperref}
+% resize the margins
+\usepackage[margin=1in]{geometry}
+% use utf8 encoding
+\usepackage[utf8]{inputenc}
+% one of the other packages complained until I put this here
+\usepackage[english]{babel}
+% allow citations
+\usepackage{cite}
+% code listings
+\usepackage{listings}
+% fix single quote in listings
+\usepackage{textcomp}
+\usepackage{filecontents}
+%\usepackage[noadjust]{cite}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{forest,kantlipsum}
+\usepackage{float}
+\usepackage{etoolbox}
+\usepackage{url}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage[labelfont=bf]{caption}
+
+%%%%%%%%%%% CUSTOM ENVIRONMENT SETUP
+
+% declare a typesetting environment for code/emphasis
+\newcommand{\code}[1]{\texttt{\bfseries#1}}
+\newenvironment{codeblock}{\bfseries\texttt\bgroup}{\egroup\par}
+% better declaration of font environment
+%\DeclareTextFontCommand{\codetext}[1]{\code{#1}}
+% declare a large font environment for use in the "slides"
+\newcommand{\instruction}[1]{\Large{#1}}
+% font environment again
+%\DeclareTextFontCommand{\instruction}{\instructionfont}
+\newenvironment{instructionblock}{\Large\bgroup}{\egroup}
+% declare a "slide" text box for use in the document
+% the slide is a numbered \section{}
+\newtcolorbox[auto counter]{slide}[3][]{%
+colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+title={\addcontentsline{toc}{section}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}\setcounter{section}{\thetcbcounter}}}
+% declare a "subslide" text box for use in the document
+% the subslide is a numbered \subsection{}
+\newtcolorbox[auto counter,number within=section]{subslide}[3][]{%
+colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}}}
+\renewcommand{\labelitemii}{$\circ$}
+\lstset{basicstyle=\ttfamily,keywordstyle=\bfseries\color{blue!80!black},identifierstyle=\bfseries,stringstyle=\color{red},showstringspaces=false,commentstyle=\itshape\color{green!40!black},upquote=true}
+
+% My Environments (keep these)
+\newcommand{\ben}{\begin{enumerate}}
+\newcommand{\een}{\end{enumerate}}
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+
+
+
+%\setlength{\arrayrulewidth}{1mm}
+%\setlength{\tabcolsep}{18pt}
+%\renewcommand{\arraystretch}{2.5}
+
+
+
+%%%%%%%%% SET UP OUR TITLE PAGE
+
+\begin{document}
+\title{ Domain Controlling \\ \large Group Policy with Active Directory}
+\author{Ananth Jillepalli \& Nagarjuna Nuthalapati}
+\date{May 31st, 2016 \\ \hyperref[changelog]{Version 2.1}} %\today
+\renewcommand{\abstractname}{Summary}
+\begin{titlepage}
+\maketitle
+\pagenumbering{gobble}
+\begin{center}
+\includegraphics[scale=.5]{UofI}
+
+\large{CS 539: Applied Security Concepts}
+
+\vskip 40pt
+
+\end{center}
+\begin{abstract}
+A Domain Controller is a reference to any machine that runs on Windows Server operating system and has the active directory services installed. Active Directory and subsequently, Group Policies, are used to deploy diverse set of configurations for different domain clients (agent machines present in the domain). Using it, we can deploy security configurations for all users, and also allocate tailored permissions of use for users that do not have security clearance. In this tutorial, using activities and challenges, we will demonstrate remote configuration of domain clients with the use of most commonly used group policy objects.   
+\end{abstract}
+
+
+\vfill
+\begin{center}
+This work is licensed under a \href{http://creativecommons.org/licenses/by/4.0/}{Creative Commons Attribution 4.0 International License}.
+\vskip 10pt
+\includegraphics[scale=.5]{cc}
+\end{center}
+
+\end{titlepage}
+
+%%%%%%%%%% TABLE OF CONTENTS
+
+\pagebreak
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%    BEGINNING OF ACTUAL DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\pagenumbering{arabic}
+\setcounter{section}{1}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+	\pagebreak
+	\begin{slide}{Objectives of this Tutorial}{\hyperref[slide 2]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Remote management of client systems through group policies and active directory:
+				\ben 
+				\item Credential management.
+				\item User Account management.
+				\item System Security management.
+				\item Client machine's default web browser management.
+				\item Auditing and remote registry access.
+				\een 
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\ben
+	
+	\item Simple and easy to guess passwords is the first vector of vulnerabilities exploited by hackers and attackers. As such, ensuring that there is a password policy in place, which makes it mandatory for the users of domain clients will reduce the exploitation through password guessing and cracking.
+	
+	
+	\item In Windows machines, the `Guest' account is a serious vulnerability, if not properly configured. As such, a centralized policy enforcement should be in place to either properly configure guest accounts or to completely remove them from usage in domain's client machines. 
+	
+	
+	\item System security is defined most basically by the protection provided from networks by a firewall. Even the best firewalls, when not configured or improperly configured, will lead to inefficient protection. As such, we should have the ability to implement policies defining firewall's behavior.
+	
+	
+	\item Modern Web Browsers are very powerful software applications. However, the functionality and capability comes at the cost of a host of vulnerabilities. As such, it is important for an administrator to be able in remotely managing client machines' web browsers for better security of the domain network.
+	
+	
+	\item Domain controller (server) itself is not any less vulnerable than most client systems. Though the credentials are kept very secret and access is severely restricted, it is often surprising to see how many servers get compromised. Worst part is, an administrator does not easily know that the server is compromised, without having some form of auditing. Registry access to client machines is required for quick recovery from manipulation attacks, which target windows registry entries.
+	
+	\een
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	
+	
+	\pagebreak	
+	\begin{slide}{Required Background}{\hyperref[slide 1]{\textless}\hyperref[slide 3]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			We assume that the reader of this tutorial has an extent of background knowledge in the following areas:
+			\begin{enumerate}
+				\item {Working experience on usage of computers and software applications, like web browsers, and virtualization software.}
+				\item {Basic overall idea of computer networks, Internet, and remote controlled configurations deployment.}
+				\item {Fundamental knowledge of remote client networks}
+				\item {An overall idea on general issues like credential security, system security, etc.,}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{4mm}
+	\noindent
+	Due to restrictions on time and manpower resources, we are not able to make the ensuing tutorial to be completely self-contained from the perspective of a user. As such, the tutorial is best used when the user already has certain background skills and knowledge. The following are some areas where we expect the users of this tutorial to have some previous skills/knowledge:
+	
+	\ben
+	
+	
+	\item Practical experience on using computers, installing and using common software applications (particularly web browsers, and virtualization software platforms). The tutorial does not explain how to navigate within the operating system's graphical user interface (GUI). Similarly, the tutorial also does not explain how to browse the Internet, how to install software applications, and how to use/navigate software applications. 
+	
+	\item An overall idea on the working of computer networks and Internet. The tutorial expects a user to understand common terms like ``server/client", ``links", "domains/forests", and ``policy enforcement" etc., 
+	
+	\item Fundamental or very basic idea on features of remote client networks' working. The tutorial expects a user to understand technical terms like ``administrative template", ``computer configuration deployment", ``remote registry access", and ``caches" etc.,
+	
+	\item Also bit of exposure to IT professional functions would be very helpful in tackling the challenges efficiently. An overall brief idea on general computer-related issues like ``credential security", ``system security", ``network security", ``large-scale remote configuration" etc., will help a lot.
+	
+	
+	\een 
+	
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+	
+	
+	
+	
+	\pagebreak
+	\begin{slide}{Hardware and Software Requirements}{\hyperref[slide 2]{\textless}\hyperref[slide 4]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			We recommend having at least the following hardware and software specifications for smooth execution of this tutorial's activities and challenges:
+			\begin{enumerate}
+				\item {A computer which can at least boot 2 virtual machines (VMs) smoothly, with no noticeable lag and delay.}
+				\item {A functional virtualization software platform. For example, VMWare or VirtualBox.}
+				\item {A vanilla Windows Server 2012 R2 (Controller) VM and a vanilla Windows 10 VM (Client).  }
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{4mm}
+	\noindent
+	For the purpose of getting the best experience out of this tutorial, there are certain minimum hardware and software requirements that we recommend users have at their disposal. However, this tutorial can also be carried out in lower specifications than what is recommended, at the cost of inconvenience ranging from minor to very annoying..
+	
+	\ben
+	
+	\item A computer powerful enough to boot 2 virtual machines without any noticeable delay or log. That would mean at least a quad-core processor, 8 GB RAM, optimally two monitors (can be managed with one at the cost of inconvenience), and a functional keyboard and mouse.
+	
+	\item It is always recommended to use a virtual machine to run tutorials like the one available in this document so as to not destabilize one's own workstation or personal machine's environment and software configurations. To that extent, we recommend having a virtualization software installed on machine, which can be used to generate virtual machines as needed. 
+	
+	\item The present tutorial can be followed only with Windows Server 2012 R2 and an another Windows client OS (7 or greater). We recommend using a vanilla (default installation) Windows 10 virtual machine acting as client and Windows Server 2012 R2 acting as server/domain controller. 
+	
+	\textbf{Note:} Please go to part \textbf{\underline{\ref{SoftwareResourceLocations}}} of the {\textbf{\hyperref[slide 22]{\underline{Appendix}}}} section for information on resources and website links to access some of the required software for the tutorial.
+	
+	\een
+	
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+
+\begin{slide}{Problem Statement: Enterprise Configuration}{\hyperref[slide 3]{\textless}\hyperref[slide 5]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		\begin{itemize}
+			\item { In an enterprise, how can one remotely configure large number of computers using same platform like windows, using minimum human support and involvement? }
+		\end{itemize}
+	\end{instructionblock}
+\end{slide}
+
+\ben
+	\item Most likely, organizations will fall victim to an exploit because of improper configuration of machines and incorrect assignment of usage permissions. Consider an example of a front desk administrative assistant unknowingly clicking a malicious script-attack link which floods the whole organization's machines with script-attack pop-ups because of improperly deployed machine configuration and incorrect allocation of machine usage permission to the administrative assistant.  
+	
+	\item  Considering this problem, an organization's network administrator should assign only the minimum needed permissions to a user that are required to get his/her work done. In addition, the network administrator also has to configure each and every machine of the organization to protect against large-scale homogeneous attacks.
+	
+	\item  While the tasks mentioned above can be done easily in an organization with a couple of machines, such tasks would become exponentially expensive and time-taking as the size of organization increases. Even in a lower-middle sized organization with 5000 machines, it becomes very expensive to employ humans for the purpose of configuring machines and assigning permissions.
+	
+	\item To address this problem, there are a few solutions, which will be briefly explained in the next slide.   
+\een
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Candidate Solutions: The Four Methods}{\hyperref[slide 4]{\textless}\hyperref[slide 6]{\textgreater}}
+%\vskip 10 pt
+\begin{instructionblock}
+\begin{enumerate}
+\item { Writing and deploying rule for each machine individually by Administrative staff.}
+\item { Instead of hiring new staff, add the responsibility to existing unit supervisors.}
+\item { Using third party software like Chef, Puppet, FreeIPA.}
+\item { Using Microsoft Active Directory and Group Policy Objects.}
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+
+
+\ben
+
+	\item  The Administrative user can write set of rules for each group and the deployment of configurations and permissions can be manually done by human staff. This scenario might be acceptable for a start-up company with less than 20-25 machines, but highly expensive in an enterprise with bigger number of machines.
+
+	\item  Instead of hiring dedicated staff for the deployment, we can merge the duties to that of a unit supervisor in each group and thus, required configurations and permissions can be assigned to every machine in a group by he group's supervisor. This process is less expensive than first, but it will bring down the production of supervisor's duties and there is also a increased risk of compromise/corruption within the supervisor. 
+
+	\item  Deployment of configurations and permission assignment can be done by using an additional third party software that connects to all the client machines and users. Software like Chef, Puppet and FreeIPA can be used to perform the above task. Chef and Puppet are configuration management tools that can deploy configurations remotely. Both Chef and Puppet have a high learning curve and are not GUI-based. As such, using those software methodologies requires training and higher pay of employees trained in them. FreeIPA can be considered as one fitting solution, but FreeIPA is limited to Linux-only operating systems.
+
+	\item  We can use two services which are natively provided by the Windows operating system, which are Actives Directory and Group policy Objects in Windows Server. We can allocate a group of machines into a domain and for each domain, we can deploy configuration and allocate permissions. The only significant limitation for this solution is that Active Directory (AD) and Group Policy Objects (GPO) are only limited to Windows operating systems. FreeIPA tries to emulate the AD-GPO services on Linux, but is far less advanced.  
+
+\een
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Chosen Solution: Group Policy \& Active Dir.}{\hyperref[slide 5]{\textless}\hyperref[slide 7]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		{ Group Policies through Active Directory: }
+		\begin{enumerate}
+			\item  {Active Directory (AD) is a hierarchical management tool.}
+			\item  {Group Policy (GP) is a large scale remote machine-configuration mechanism.}
+			\item  {Domains are the clusters, on which GP operate.}
+			\item  {Forest is a top layer hierarchy of tree structures. }
+			\item  {Configure using group policies.}
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+
+\ben
+	\item  \textbf{Active Directory}: An Active Directory is a special purpose hierarchical database which is considered to be extensible and replicated. It is designed to handle a large number of search and read operations with significantly smaller number of changes and updates. 
+
+	\item  \textbf{Group Policy}: Group Policy in windows servers is a feature provided by the Windows that helps us to implement specific configuration for users. These group policy settings are linked to a Active directory container using a Group plicy objects.
+
+	\item  \textbf{Domains}: A windows domain is a computer network, where all the users, computers, policies are registered with a central database know as Domain controller.
+
+	\item  \textbf{Forest}: A tree is collection of one or more trees interlinked with a trust hierarchy. Forest is the top hierarchy of the tree structures.
+
+	\item  The task of remote configuration starts by setting up the Domain in very initial stage. If we want to push our domain into a existing forest, we will include it in the forest. Else we create a new forest for our domain container. After, setting up domain and forest, we will add all the end clients systems that falls under the a group. Rules required for each group are configured into a group policy object and linked to the respective group. 
+
+\een
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Related Articles: GPO in News}{\hyperref[slide 6]{\textless}\hyperref[slide 8]{\textgreater}}
+\begin{instructionblock}
+\begin{enumerate}
+	\item  Server 2012 makes GPO Editing easier (5th Dec. 2012). \cite{3ways}
+	\item  Windows Phone now supports GPO Editing.\\ (20th June 2014) \cite{phone} 
+	\item  Windows patches critical security vulnerability.\\ (11th Feb. 2015) \cite{gpovul}
+	\item  Windows GPO Editing extended to LibreOffice.\\ (12th Apr. 2015) \cite{libre}
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+
+	
+\ben	
+	\item  Windows Server 2012 has three new features which enhance the functionality of GPO (Group Policy Objects) editing and make it easier to control domains using different object attributes through group policies. The enhancements are: Improved Troubleshooting, Remote Group Policy Updating, Infrastructure Status Management \cite{3ways}. 
+
+	\item  Windows Phone operating system, from version 8 onwards, have been made compatible with GPO editing mechanism, thus enhancing the diverse range of applications, which can be configured using group policy objects. Though growing, not all configurations are GPO compatible yet \cite{phone}.
+
+	\item  Critical Vulnerability in Group Policy had Windows computers stand at huge risk in first quarter of 2015. Publicly revealed after Microsoft patched the vulnerability, which could allow attackers to remotely execute code in the form of group policy objects. It was found and reported by JAS Global Advisors along with simMachines Security in January 2014. Unlike many popular application vulnerabilities, this was a design vulnerability and not an implementation vulnerability \cite{gpovul}. 
+
+	\item  Group Policy template configuration has been made available for LibreOffice suite of tools, allowing GPO editing for LibreOffice on Windows a lot easier. Any of LibreOffice's 25,000 settings can be configured using GPO template through registry key modification \cite{libre}.
+\een
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+\pagebreak
+\begin{slide}{Outline of Tutorial}{\hyperref[slide 7]{\textless}\hyperref[slide 9]{\textgreater}}
+\begin{instructionblock}
+\begin{itemize}
+\item Intro to Domains, Clients and Systems.
+\item Hands-on exercises in GP configuration. 
+\item Activities and Challenges:
+	\ben 
+		\item  {Common Security \& Group-Policy Configurations. }
+    	\item  Firewall Management and Configuring Internet\\ Explorer/Edge through Administrative Templates.
+	    \item  Credentials, Authentication and Session Management.
+    	\item  Secure Management of Domain Controllers \& Clients.
+    \een
+\end{itemize}
+
+\end{instructionblock}
+\end{slide}
+\noindent
+The main purpose of this tutorial is to learn the art of controlling domain clients through domain controller, using group policy editing through active directory feature. Our narrowed focus approach will target the following aspects of GPO Editing:
+
+\ben
+
+	\item  \textbf{Common Security Enhancing Group-Policy Configurations: }
+With regards to this particular theme, we will learn using a hands-on approach as on how to disable password cache, disabling guest accounts, disabling LAN Manager (LM) and New Technology LAN Manager (NTLM), and finally disabling LM hash storage mechanism to restrict attack vector scope. 
+
+	\item  \textbf{Firewall Management, Configuring IE/ME through Administrative Templates:}
+Towards the fulfillment of this module's theme, we will learn how to remotely manage firewall configurations for domain clients in a domain and also we will learn remote configuring Internet Explorer and Microsoft Edge through GUI-based implementation of Administrative (ADM) Templates. 
+
+	\item  \textbf{Credentials, Authentication and Session Management:}
+With respect to this module's theme, we will learn how to manage credentials of domain clients like setting password length and setting password history. Managing authentication services like Kerboros protocol and Session management like account lockout threshold and etc., are also part of this module.
+
+	\item  \textbf{Secure Management of Domain Clients:}
+Secure management of client systems in a domain can be done through many methods. In this module, we will learn how to disable task manager in client systems, how to setup auditing on domain controller and last, but not the least, we will also have a quick look at securely and remotely editing domain clients' Windows configurations by accessing Windows Registry on client systems.
+
+\een
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Questions: Questions 1,2}{\hyperref[slide 8]{\textless}\hyperref[slide 10]{\textgreater}}
+\begin{instructionblock}
+\bi 
+\item[Q1:] How many settings does LibreOffice have at large?
+\item[Q2:] Since which version of Windows Phone, has it been made compatible with group policy objects?
+\ei
+
+\end{instructionblock}
+\end{slide}
+\vfill
+
+\vspace{2mm}
+\noindent
+\textbf{Answer to Q1:}\\
+25000 Configurations, all compatible with group policy object editing.
+
+\vspace{6mm}
+\noindent
+\textbf{Answer to Q2:}\\
+Since Windows Phone 8.1.
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Domains and Forests}{\hyperref[slide 9]{\textless}\hyperref[slide 11]{\textgreater}}
+\begin{instructionblock}
+	Domains are:
+\begin{enumerate}
+	\item  Units of Partition.
+	\item  Containers of Active Directory objects.
+	\item  A group collection of client systems.
+\end{enumerate}
+	Forests are:
+\begin{enumerate}
+	\item  Distributed databases.
+	\item  A top layer hierarchical structure of domain containers.
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+
+
+\ben
+	\item  Domains are units of single partitions in a forest and each domain consists of its' respective active directory objects (users, computers, and groups). There will be a domain administration group for each and every domain, that has full control over the domain. We can say that if an object falls into a domain, then generally, it can be controlled by that particular domain's administrator.\cite{fordiag}
+
+	\item  Every client system, in a particular domain, can be configured by linking the client system with a group policy object, using the respective group configurations. All the rules in GPO list are applicable only for the objects residing in a particular domain container.
+
+	\item  A forest is a distributed database and is a top layer hierarchical structure of domain containers, which are considered to be functional units in the forest structure. Each domain container in the forest stores and manages it own active directory objects. Domain containers are also considered to be core functional units in the forest structure, each domain container in a forest is used primarily to manage their respective Active Directory objects. 
+\een
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Setting up the VMs}{\hyperref[slide 10]{\textless}\hyperref[slide 12]{\textgreater}}
+	\begin{instructionblock}
+		The tutorial requires one server OS and one non-server OS. For that purpose, we recommend using:
+		\begin{itemize}
+			\item {A vanilla Windows 7/8/8.1/10 VM (We will be using Windows 10 EDU version). Also, this VM will be referred to as ``non-server" VM in subsequent slides. }
+			\item {A vanilla Windows 2012 R2 Server. This VM will be referred to as ``server" VM. }
+		\end{itemize}
+		We assume that the user following this tutorial has administrator-level privileges(\textbf{*}).
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent
+\textbf{NOTE:} It is recommended to assign static IP address to both the VMs. \href{http://www.howtogeek.com/howto/19249/how-to-assign-a-static-ip-address-in-xp-vista-or-windows-7/}{Click \underline{HERE}} \cite{staticIP} to visit an article, which brilliantly explains with pictures, about the process of assigning static IP addresses to machines. 
+
+\vspace{4mm}
+\noindent
+\textbf{NOTE 2:} For the non-server VM's Default Gateway and Preferred DNS Server attributes, it is also recommended to assign a value same as the static IP address of Server VM.
+
+\vspace{4mm}
+\noindent
+\textbf{*} This tutorial cannot be replicated successfully without administrator level rights because the activities and challenges involved in the tutorial all require administrator rights. 
+ 
+ 
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background Activity: Setting up Domain}{\hyperref[slide 11]{\textless}\hyperref[slide 13]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item In this slide, we will see step-by-step instructions on how to setup a Domain. 
+			\item Followed by instructions on how to assign a system as domain controller.
+%			\item .
+		\end{enumerate}
+%		\noindent
+	\end{instructionblock}
+\end{slide}
+
+\noindent
+\textbf{Setting up a domain:}\\
+Boot up the Windows 2012 R2 Server VM. Once it starts up, follow:
+
+\begin{enumerate}
+	\item Open ``Server Manager" and navigate to ``Dashboard". Click on ``Manage" in the top-right part of server manager.
+	\item From the list of options, select ``Add Roles and Features" option. Click on ``Next" in the \textit{Before You Begin} section. 
+	\item In the \textit{Select installation type} section of Add Roles and Features Wizard, click on \textbf{Role-based or feature-based installation} radio button and proceed by clicking on next.
+	\item In the \textit{Select destination server} section, click on \textbf{Select a server from the server pool} radio button and subsequently, select the corresponding server (which should be a Microsoft Windows Server 2012 R2, if this tutorial is being followed). Proceed by clicking on next.
+	\item In the \textit{Select server roles} section, check the boxes beside \textbf{Active Directory Domain Services} and \textbf{DNS Server} roles in the ``Roles" list. Proceed by clicking on next.
+	\item In the \textit{Select server roles} section, the ``Add Roles and Features Wizard" will already have some features checked, which it deems necessary for the previously selected roles to work. These default checked features are sufficient. Proceed by clicking on next.
+	\item Skip the \textit{Active Directory and Domain Services} section by clicking next.
+	\item In the \textit{Confirm installation selections screen}, check the box beside \textbf{Restart destination server automatically if required}. Finish the selection mechanism by clicking on ``Install" button.
+	\item In the subsequent screen, after installation, click on ``Close" and restart the operating system if the wizard does not automatically restart the OS.
+\end{enumerate}
+
+\vspace{4mm}
+\noindent
+\textbf{Assigning a system as Domain Controller:}\\
+Boot up the same Windows 2012 R2 Server VM, as above. Once it starts up, follow:
+
+\begin{enumerate}
+	\item Open ``Server Manager" and navigate to ``Dashboard". Click on the flag-like looking icon, in the top-right part of server manager, to the left of ``Manage".
+	\item From the list of options, click on the ``Promote this server to a domain controller" option.
+	\item In the \textit{Deployment Configuration} section of Active Directory Domain Services Configuration Wizard, click on radio button beside \textbf{Add a new forest} and in the text form field, give a name for forest in the format \texttt{blah.blahblah}. The tutorial will use the name \texttt{radicl.security}. Proceed by clicking on ``Next" button.
+	\item In the \textit{Domain Controller Options} section, let the default selections stay and do not change or add anything. In case Active Directory services fail, we can log into system using a password, called as Directory Services Restore Mode (DSRM) password. Give a password and re-type it for confirmation. Proceed by clicking on next.
+	\item In the \textit{DNS Options} section, we will not be doing anything. Proceed by clicking next.
+	\item In the \textit{Additional Options} section, the wizard will automatically assign a NetBIOS name in a few seconds. If \texttt{radicl.security} was used as the forest name, then, the NetBIOS will most likely be assigned as \texttt{RADICL}. If wanted, any name can be used, by changing the assigned value to desired name. However, just for the sake of consistency with the tutorial, \texttt{RADICL} is recommended. Proceed by clicking on next.
+	\item In the \textit{Paths} section, the path for database, log files and SYSVOL are requested. Default assignment of path is usually good enough for most purposes. Proceed forward by clicking on next.
+	\item In the \textit{Review Options} section, review the selection and proceed by clicking on next.
+	\item In the subsequent section titled \textit{Prerequisites Check}, let the check be carried out. It takes a few minutes and then it shows either if all prerequisite checks passed or if some failed. If the tutorial was followed closely all through, prerequisite checks should pass successfully, without any errors, but with two warnings.
+	\item Proceed by clicking on ``Install". After installation, the wizard should automatically restart the OS. If not, restart it manually.
+\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background Activity: Adding Clients}{\hyperref[slide 12]{\textless}\hyperref[slide 14]{\textgreater}}
+\begin{instructionblock}
+\begin{enumerate}
+\item Clients are end users in a domain. 
+\item They have to be compliant towards the policies set by the domain controller of their resident domain.
+\item In this section, we will take a look at the process of adding clients to a domain.
+\end{enumerate}
+
+\end{instructionblock}
+\end{slide} 
+
+\noindent
+{\textbf{Adding Clients to the Domain:}}\\
+Boot up the Windows non-server VM. Once it starts up, follow:
+
+\begin{enumerate}
+\item Go to \textit{System Properties} by right clicking on the Windows icon (usually at the left-most position of task-bar) and by selecting ``System" from the resultant pop-up list of items. For Windows 7, \textit{System Properties} can be accessed by right clicking ``Computer" icon or button in start menu and selecting ``Properties".  
+\item In the subsequent dialogue box, click on ``Change Settings" hyper-link, which is present to the right of the screen under \textit{Computer name, domain, and workgroup settings} section. 
+\item In the \textit{System Properties} wizard, under \textit{Computer Name} tab, look for ``Change" button beside the text \textit{To rename the computer...} and click on the button.
+\item In the \textit{Computer Name/Domain Changes} dialogue box, look for a section called \textit{Member of} and select the radio button beside \textit{Domain:} field entry tag. A grayed out text field form will be rejuvenated, in which the forest name should be entered (as created in the previous slide), which would be \textbf{radicl.security} for this tutorial's purposes.
+\item One will, most likely, be prompted to enter the login credentials of the administrator account belonging to the domain controller system (the 2012 R@ server machine). Enter the credentials, and after validating them, a pop-up box will notify of the success in adding a client machine to the domain.
+\item A restart will be needed in order to implement the domain changes.
+\end{enumerate}
+
+\noindent
+Thus, adding of client machines to a domain can be achieved by following the above mentioned steps. Now, let us move on with the activities and challenges.
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Activity: Disabling Password Cache}{\hyperref[slide 13]{\textless}\hyperref[slide 15]{\textgreater}}
+\vskip 5pt
+\begin{instructionblock}
+\begin{enumerate}
+\item Disable password cache in the Domain Controller.
+\item Disable password cache in the Client Systems.
+\end{enumerate}
+
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+Password cache is temporary copy of the password, which is stored internally during an active session, thus creating a potential vector for exploitation of systems through mechanism of stealing password from caches. As such, it is highly recommended to disable password cache in any system, as any data item (not just password) stored in a system, is a data item which is vulnerable to a hacker's attack.  
+
+\begin{enumerate}
+	\item \textbf{Disable password cache in the Domain Controller:}
+	
+	\noindent
+	Boot up the Windows server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Expand Domain Controllers within the populated sub-folders.
+		\item Right click on ``Default Domain Controllers Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network Access: Do not allow storage of password and credentials for network authentication} and click twice on the item.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Enabled". 
+	\end{enumerate}
+
+	\item \textbf{Disable password cache in the Client Systems:}
+		
+	\noindent
+	Boot up the Windows server VM. Once it starts up, follow:
+		
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network Access: Do not allow storage of password and credentials for network authentication} and double-click on the item.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Enabled". 
+	\end{enumerate} 
+	
+	With that, we have enabled two group policies (which are effective on domain controller itself and client machines in domain as well), to not allow storage of password caches and credentials with respect to network authentication.
+	
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{ Activity: Disabling Guest User }{\hyperref[slide 14]{\textless}\hyperref[slide 16]{\textgreater}}
+\vskip 5pt
+\begin{instructionblock}
+	Rationale behind disabling a guest user features:
+	\begin{itemize}  
+		\item Fair amount of access to a system is provided for guest accounts.
+		\item By default, guest users shares same amount of storage, as a standard user.
+		\item Guest users can enter into a system without credentials being absolutely required. 
+	\end{itemize}
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+If guest users are enabled, then our system grants fair amount of access to the guest user. To reduce the potential of exploit by a large margin, it is highly recommended to disable guest user logins. Through this activity, we will demonstrate how to disable guest user logins remotely, using group policy object editing.
+
+\begin{enumerate}
+	\item \textbf{Disabling Guest User in the Domain Controller:}
+	
+	Boot up the Windows server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Expand Domain Controllers within the populated sub-folders.
+		\item Right click on ``Default Domain Controllers Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Accounts: Guest account status} and click on the item twice.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Disabled". 
+	\end{enumerate}
+	
+	
+	
+	\item \textbf{Disabling Guest User in Client Systems:}
+
+	Boot up the server VM. Once it starts up, follow:
+   
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Accounts: Guest account status} and double-click on the item.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Disabled". 
+	\end{enumerate}
+	
+	With that, we have enabled two group policies (which are effective on domain controller itself and client machines in domain as well), to disable guest user logins completely.
+	
+\end{enumerate}
+ 
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{ Activity: Forcing NTLM v2 }{\hyperref[slide 15]{\textless}\hyperref[slide 17]{\textgreater}}
+	\vskip 5pt
+	\begin{instructionblock}
+		\begin{itemize}
+			\item LAN Manager(LM) and version 1 of New Technology LAN Manager(NTLM) are vulnerable to exploits.
+			\item Particularly vulnerable to `Reflection' attack and `Pass The Hash' exploit.
+			\item Windows Server 2012 R2 provides substitute module, NTLM v2, which is relatively very secure.
+			\item As such, we disable LM and NTLM v1 to force the machines to use nothing but NTLM v2.
+		\end{itemize}
+	\end{instructionblock}
+\end{slide}
+
+
+\vspace{2mm}
+\noindent
+In this activity, we will demonstrate forcing NTLM v2 while disabling LM and NTLM v1, remotely using Group Policy Object editing. 
+
+\begin{enumerate}
+	\item \textbf{Forcing NTLM v2 in the Domain Controller:}
+	
+	Boot up the Windows server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Expand Domain Controllers within the populated sub-folders.
+		\item Right click on ``Default Domain Controllers Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network security: LAN Manager authentication level} and click on the item twice.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and from the drop down list, select \textit{Send NTLMv2 response only. Refuse LM \& NTLM}. 
+	\end{enumerate}
+	
+	
+	
+	\item \textbf{Disabling Guest User in Client Systems:}
+	
+	Boot up the server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network security: LAN Manager authentication level} and click on the item twice.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and from the drop down list, select \textit{Send NTLMv2 response only. Refuse LM \& NTLM}. 
+	\end{enumerate}
+	
+	With that, we have enabled two group policies (which are effective on domain controller itself and client machines in domain as well), to force the machines into using NTLM v2 and disabling LM \& NTLM v1 module usage.
+	
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{ Activity: LM password hashes  }{\hyperref[slide 16]{\textless}\hyperref[slide 18]{\textgreater}}
+	\vskip 5pt
+	\begin{instructionblock}
+		\begin{itemize}
+			\item LM password hashes are easy to crack
+			\item Particularly vulnerable to `Rainbow tables' attack, `One way function' cracking attacks, `Brute force' attack, and `Replay the hash(Man-in-Middle)' attack.
+			\item As such, we configure the machines to not store LM hashes anymore.
+		\end{itemize}
+	\end{instructionblock}
+\end{slide}
+
+
+\vspace{2mm}
+\noindent
+LM password hashes can be easily converted into the original plain text password, and a hacker can find them easily on a disk using some of the many Hash dump tool. As a result, it is highly recommended not to store them in the system. In this activity we will demonstrate how to disable storage of LM hash passwords, remotely using group policy object editing\\
+
+
+\begin{enumerate}
+	\item \textbf{Disabling storage of LM hashes in the Domain Controller:}
+	
+	Boot up the Windows server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Expand Domain Controllers within the populated sub-folders.
+		\item Right click on ``Default Domain Controllers Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network security: Do not store LAN Manager hash value on next password change } and click on the item twice.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Enabled". 
+	\end{enumerate}
+	
+	
+	
+	\item \textbf{Disabling storage of LM hashes in Client Systems:}
+	
+	Boot up the server VM. Once it starts up, follow:
+	
+	\begin{enumerate}
+		\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+		\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+		\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+		\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+		\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+		\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+		\item Subsequently, double click on ``Policies".
+		\item Next, double click on ``Windows Settings".
+		\item Followed by double clicking ``Security Settings".
+		\item Next, double click on ``Local Policies".
+		\item Finally, click on ``Security Options" twice.
+		\item In the resultant populated list of group policy objects, search for \texttt{Network security: Do not store LAN Manager hash value on next password change } and click on the item twice.
+		\item In the subsequent pop up box, check the box beside \textit{Define this policy setting:} and click on the radio button beside ``Enabled". 
+	\end{enumerate}
+	
+	With that, we have enabled two group policies (which are effective on domain controller itself and client machines in domain as well), to force the machines into using NTLM v2 and disabling LM \& NTLM v1 module usage.
+	
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Questions: Quiestions - 3,4}{\hyperref[slide 17]{\textless}\hyperref[slide 19]{\textgreater}}
+\begin{instructionblock}
+\bi 
+\item[Q3:] Why are we trying to disable the storage of LM password hashes?
+\item[Q4:] What is the reason behind Enterprises having multiple domain controllers in a single domain container?
+\ei
+
+\end{instructionblock}
+\end{slide}
+\vfill
+
+\vspace{2mm}
+\noindent
+\textbf{Answer to Q3:}\\
+LM password hashes are easy to crack in order to obtain plain text passwords and a hacker can find them easily using a hash dump tool if they are stored on disk.
+
+
+\vspace{6mm}
+\noindent
+\textbf{Answer to Q4:}\\
+In a single Domain controller model, if the domain controller gets compromised, then whole domain is under the purview of attacker. Or if the domain controller gets taken down, the entire domain container will have their domain features rendered non-functional.
+Therefore, it is always better to have more than one domain controller in a domain container.
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+ 
+
+\pagebreak
+\begin{slide}{Challenge I: Configuring Firewalls }{\hyperref[slide 18]{\textless}\hyperref[slide 20]{\textgreater}}
+\begin{instructionblock}
+\begin{enumerate}
+\item Remotely configure Firewalls of Client systems, using group policy object editing for the following requirement configurations:
+\begin{enumerate}
+	\item {Enable logging.}
+	\item {Log dropped connections.}
+	\item {Log successful connections.}
+	\item {Set a custom path for log file.}
+	\item {Set maximum threshold size of the log.}
+\end{enumerate}
+\end{enumerate}
+
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} Firewall is a part of Network Connections components and is usually controlled by administrators using templates
+
+\vfill
+
+
+
+
+\pagebreak
+
+
+
+
+%\vspace{2mm}
+%\noindent
+%\textbf{HINT:} The parameter \texttt{("capability.policy.maonoscript.sites", "noscript.net http://noscript.net https://noscript.net");} might white-list NoScript website.
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge II: Internet Explorer/EDGE }{\hyperref[slide 19]{\textless}\hyperref[slide 21]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item {Disable JavaScript in IE for domain clients from domain controller, using group policy object editing.}
+			\item {Block all Cookies in Edge for domain clients from domain controller, using group policy object editing.}
+		\end{enumerate}
+		
+	\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} JavaScript in IE is called as `Active Scripting' and is a part of Internet Zone in the Control Panel of IE, and is usually controlled by administrators using templates.
+
+\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge III: Credentials Management}{\hyperref[slide 20]{\textless}\hyperref[slide 22]{\textgreater}}
+\begin{instructionblock}
+\begin{enumerate}
+	\item Set the following credential policy for domain clients, using group policy object editing:
+\begin{enumerate}
+ \item Set minimum password length to 10 letters.
+ \item Set maximum Password Age to 30 days.
+ \end{enumerate}
+ \end{enumerate}
+
+\end{instructionblock}
+\end{slide}
+\vspace{2mm}
+\noindent
+\textbf{Hint:} Password management is one of the critical account security settings in all of the available Windows settings.
+
+\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge IV: Authentication \& Sessions }{\hyperref[slide 21]{\textless}\hyperref[slide 23]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Set the following Authentication and Session management policy remotely, for clients from domain controller, using group policy object editing: 
+		\begin{enumerate}
+			\item Lock out account after 4 invalid attempts 
+		\end{enumerate}
+			
+	\end{enumerate}
+	\vspace{26mm}
+	\noindent
+	\textbf{Bonus:} Set maximum lifetime for ``kerboros user ticket renewal" as 1 day		
+	\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} If you were able to finish Challenge III - Credentials Management, you should be able to complete this challenge. Keen observation is they key, perhaps?
+
+\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{ Challenge V: Disable Task Manager }{\hyperref[slide 22]{\textless}\hyperref[slide 24]{\textgreater}}
+\begin{instructionblock}
+\begin{enumerate}
+\item From domain controller, disable Task Manager for Client systems using group policy object editing.
+    
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} Users have their configurations in a separate location, from the ones belonging to computers. Task Manager is disabled by administrators through templates. Ctrl+Alt+Del combination of keys is the most usual method of accessing Task Manager.
+
+\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+% bibliography on last page
+\pagebreak
+\begin{slide}{ Challenge VI: Enabling Auditing }{\hyperref[slide 23]{\textless}\hyperref[slide 25]{\textgreater}}
+	\begin{instructionblock}
+		From domain controller, set the following policies for domain controller:
+		\begin{enumerate}
+			\item Enable Domain controller system's logon events auditing (For both successful and failed attempts).
+			\item Enable Domain controller system's policy change auditing (For both successful and failed attempts).
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} Since we are configuring domain controller from domain controller itself, we can assume that the required policy objects will be classified as `Local Policies'. And auditing is a security setting of windows computers.
+
+\vfill
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+\pagebreak
+\begin{slide}{Challenge VII: Remote Registry Access}{\hyperref[slide 24]{\textless}\hyperref[slide 26]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Remote Registry Access
+			\begin{enumerate}
+				\item Remotely access Clients machine's Windows Registry from the Domain Controller.
+			\end{enumerate}
+			
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:} Enable Remote Registry feature in default domain policy for clients from controller. Client system's firewall generally blocks when someone tries to access its windows registry, so add an exception in Client's local group policy. Open registry editor from domain controller and connect to client registry.
+
+\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+% bibliography on last page
+\pagebreak
+\begin{slide}{Conclusion}{\hyperref[slide 25]{\textless}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Secure configuration of for both domain controller and clients is important.
+			\item A Domain controller can issue group policies for all the domain clients and itself.
+			\item Even with secure configuration, no system is immune to exploitations.
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\begin{enumerate}
+	
+\item A securely configured domain controller and substandard configurations for client systems is a terrible pitfall, to be avoided at all costs. Similarly, a well configured network of clients and a poorly configured domain controller will put the entire network at risk, which is to be highly avoided.
+
+\item Thus, through the usage of group policy objects deployed with the help of active directory, we are able to configure both domain controller and client systems through domain controller, reducing the vulnerability vectors in both clients and controllers.
+
+\item Even with secure configurations, there are many exploitations being carried out. Never being sloppy in system security and not taking even a minute detail for granted with regards to a system's security are needed along with secure configurations.
+
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+	
+\noindent
+\begin{slide}{Appendix: Solutions and Change-log}{\hyperref[slide 14]{\textless}}
+\begin{instructionblock}
+	\begin{enumerate}
+		\item {Solutions to the challenges}
+		{\small{\ben
+			\item Challenge I
+			\item Challenge II
+			\item Challenge III
+			\item Challenge IV
+			\item Challenge V
+			\item Challenge VI
+			\item Challenge VII
+		\een}}
+		\item {Tutorial-Related Resources}
+		\item {Change-Log}
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+	
+\ben
+	
+	\item \textbf{Solutions to the Challenges:}	
+	\ben
+		\item \textbf{Challenge I:}		
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Administrative Templates".
+			\item Followed by double clicking ``Network".
+			\item Then, double click on ``Network Connections".
+			\item Next, double click on ``Windows Firewall".
+			\item Finally, click on ``Domain Profile" twice.
+			\item All the required group policy objects are available in the list of items present in the resultant screen. 
+		\een 
+			
+		\vspace{4mm}
+		\item \textbf{Challenge II:}
+		
+		\textbf{Disabling JavaScript in Internet Explorer:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Administrative Templates".
+			\item Followed by double clicking ``Windows Components".
+			\item Then, double click on ``Internet Explorer".
+			\item Next, double click on ``Internet Control Panel".
+			\item Subsequently, click on ``Security Page" twice. 
+			\item Finally, double-click on ``Internet Zone".
+			\item The group policy object item is \texttt{Allow active scripting}.
+			\item Double click the object item and select the ``Enable" radio button, in the rejuvenated drop-down list, select the option ``Disable".
+		\een
+		
+		\vspace{4mm}
+		\textbf{Regarding Microsoft Edge Group Policies:} During the era of Microsoft Windows Server 2012 R2, Edge browser was not released, as such, Edge cannot be configured through group policy objects from Server 2012 R2. However, Edge browser can still be configured from the Group Policy Management Editor of Client machine directly. The process of which, is as follows:
+		
+		
+		\vspace{4mm}
+		\textbf{Block all Cookies in Microsoft Edge:}
+		\ben
+		
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Administrative Templates".
+			\item Followed by double clicking ``Windows Components".
+			\item Then, double click on ``Internet Explorer".
+			\item Next, double click on ``Internet Control Panel".
+			\item Subsequently, click on ``Security Page" twice. 
+			\item Finally, double-click on ``Internet Zone".
+			\item The group policy object item is \texttt{Allow active scripting}.
+			\item Double click the object item and select the ``Enable" radio button, in the rejuvenated drop-down list, select the option ``Disable".
+		\een
+		
+		
+		 
+
+		\vspace{4mm}
+		\item \textbf{Challenge III:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Windows Settings".
+			\item Followed by double clicking ``Security Settings".
+			\item Then, double click on ``Account Policies".
+			\item Next, double click on ``Password Policies".
+			\item In this repository, there is the group policy objects needed to achieve challenge's requirements. 
+		\een
+
+ 
+	
+		\vspace{4mm}
+		\item \textbf{Challenge IV:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Windows Settings".
+			\item Followed by double clicking ``Security Settings".
+			\item Then, double click on ``Account Policies".
+			\item Next, double click on ``Account Lockout Policies".
+			\item In this repository, there is the group policy object needed to achieve challenge's requirements and also the bonus challenge requirement.
+		\een
+	
+
+
+		
+		\vspace{4mm}
+		\item \textbf{Challenge V:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``User Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Administrative Templates".
+			\item Followed by double clicking ``System".
+			\item Then, double click on ``Ctrl + Alt + Delete options".
+			\item In this repository, there is the group policy object needed to achieve challenge's requirements.
+		\een
+		
+		
+		
+		
+		\vspace{4mm}
+		\item \textbf{Challenge VI:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Controllers Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Windows Settings".
+			\item Followed by double clicking ``Security Settings".
+			\item Then, double click on ``Local Policies".
+			\item Next, double click on ``Audit Policy".
+			\item In this repository, there are all the group policy objects needed to achieve challenge's requirements.
+		\een
+		
+		
+		
+		
+		\vspace{4mm}
+		\item \textbf{Challenge VII:}
+		\ben
+			\item Open \textit{Group Policy Management} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Controllers Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Policies".
+			\item Next, double click on ``Windows Settings".
+			\item Followed by double clicking ``System Services".
+			\item Then, double click on ``Local Policies".
+			\item Using the appropriate group policy object, ``Enable Remote Registry", enable the functionalities of remote registry access.
+		\een
+		
+		\vspace{2mm}	
+		\textbf{Next, follow the following steps on Domain Controller:}
+		\ben
+			\item Open \textit{gpedit.msc} wizard (usually found by typing in \texttt{Group Policy} keyword into the search bar of windows).
+			\item Once in the wizard box, expand the \textbf{Forest: radicl.security} (or whatever forest name was assigned earlier) which can be found in the left pane, under \textit{Group Policy Management} categorization.
+			\item Once \textit{Forest: radicl.security} is expanded, within the resultant populated folders, expand the folder called as \textbf{Domains}.
+			\item After expanding the domains folder inside forest, expand the domain radicl.security (or whatever name was assigned earlier).
+			\item Consequently, right click on ``Default Domain Controllers Policy" and select ``Edit...".
+			\item In the \textit{Group Policy Management Editor}, double click on ``Computer Configuration" option in the middle pane.
+			\item Subsequently, double click on ``Administrative Templates".
+			\item Next, double click on ``Network".
+			\item Then, double click on ``Network Connection".
+			\item Subsequently, double click on ``Windows Firewall".
+			\item Finally, click on ``Domain Profile" twice.
+			\item In this repository, there is the ``Allow Remote Administration Exception", using which, we should permit the remote administration on the particular domain.
+		\een
+		
+		\vspace{2mm}
+		\textbf{In the last phase, we need to do the following:}
+		\ben
+			\item Open \textit{Windows Registry Editor} wizard (usually found by typing in \texttt{``regedit"} keyword into the search bar of windows).
+			\item  Click on ``File" drop-down menu and choose ``Connect Network Registry" option by clicking on it.
+			\item  Click on the ``Advanced" button.
+			\item  Click on ``Find Now" button.
+			\item  Select the desired client system from search results and click on the ``OK" button.
+		\een
+	
+		
+		
+		
+		\een
+	
+	
+	
+	
+	
+	\pagebreak
+	
+	
+	\item \textbf{Tutorial-Related Resources:}
+	\label{SoftwareResourceLocations}
+		
+	A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{CLICK ME}}.	
+	
+	An evaluation copy of Windows Server 2012 R2 - Microsoft - \href{https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2012-r2}{\underline{CLICK ME}}
+	
+	A Windows 10 VM with Microsoft Edge - \href{https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/}{\underline{CLICK ME}}
+	
+	\vspace{8mm}
+	\item \textbf{Change-Log:}
+	\label{changelog}
+	
+	\vspace{6mm}
+	{
+		\begin{tabular}{ |p{1cm}|p{3cm}|p{3cm}|p{3cm}|  }
+			\hline
+			\multicolumn{4}{|c|}{Group Policies with Active Directory Tutorial} \\
+			\hline
+			\texttt{\textbf{Ver.}} & \texttt{\textbf{Date}} & \texttt{\textbf{Authors}} & \texttt{\textbf{Changes}} \\
+			\hline
+			v1 & Feb. 24th 2016 & Ananth Jillepalli and Nagajuna Nuthalapati & First draft of tutorial. \\
+			\hline
+			v2 & Jun. 13th 2016 & Ananth Jillepalli & Major content additions and remodeled the structure. \\
+			\hline
+			v2.1 & Jun. 15th 2016 & Ananth Jillepalli & Added appendix and other minor enhancements. \\
+			\hline
+		\end{tabular}
+	}
+	
+	
+	
+	
+	\een
+
+
+
+
+
+
+
+
+
+% bibliography on last page
+\pagebreak
+% this style of bibliography shows urls
+\bibliographystyle{IEEEtran}
+
+\begin{thebibliography}{99}
+
+\bibitem{3ways}
+
+J. Peter Bruzzese, ``3 ways Windows Server 2012 makes Group Policy Easier", last accessed 22nd Feb. 2016, http://www.tomshardware.com/news/firefox-tracking-protection-private-browsing,30484.html, 5th DECEMBER 2012.
+
+\bibitem{phone}
+
+David Scammell, ``Windows Phone 8.x is for Business!", last accessed on 22nd Feb. 2016, https://community.spiceworks.com/topic/236221-windows-phone-8-x-is-for-business, 20th JUNE 2014.
+
+\bibitem{gpovul} 
+
+Lucian Constantin, ``Critical Vulnerability in Group Policy Puts Windows Computers at Risk", last accessed on 22nd Feb. 2016, http://www.cio.com/article/2883134/critical-vulnerability-in-group-policy-puts-windows-computers-at-risk.html, 11th FEBRUARY 2015.
+    
+\bibitem{libre}
+
+Sam Tuke, ``Good news for Windows Server Administrators: Group Policy template for LibreOffice available", last accessed on 22nd Feb. 2016, https://www.collaboraoffice.com/community-news/new-group-policy-template/, 12th APRIL 2015.
+    
+\bibitem{firewall} 
+
+Microsoft Technet, ``Deploying Windows Firewall Settings With Group Policy", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/library/bb490626.aspx, 17th DECEMBER 2005.
+
+\bibitem{ADDS} 
+
+Microsoft Technet, ``AD DS Auditing Step-by-Step Guide", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/library/cc731607(WS.10).aspx, 15th MARCH 2010.
+
+\bibitem{scw} 
+
+Security Watch - Microsoft Technet, ``Using SCW on Windows Server 2008", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/magazine/2008.03.securitywatch.aspx, 13th SEPTEMBER 2008.
+
+\bibitem{scm} 
+
+Paul Schnackenburg, ``Microsoft Security Compliance Manager: Security Settings Simplified", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/magazine/hh489604.aspx, 4th DECEMBER 2012.
+
+\bibitem{dscm} 
+
+Microsoft Download Center, ``Microsoft Security Compliance Manager", last accessed on 22nd Feb. 2016, https://www.microsoft.com/en-sg/download/details.aspx?id=16776, 2016.
+
+\bibitem{scmk} 
+
+Microsoft Technet, ``Microsoft Security Compliance Manager - Key Features", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/library/cc677002.aspx, 28th JANUARY 2013.
+
+\bibitem{cisben} 
+
+Center for Internet Security, ``CIS Microsoft Windows Server 2012 Benchmarks", last accessed on 22nd Feb. 2016, https://benchmarks.cisecurity.org/tools2/windows/CIS\_Microsoft\_Windows\_Server\_201\\2\_Benchmark\_v1.0.0.pdf, 17th DECEMBER 2012.
+
+\bibitem{2012r2} 
+
+Microsoft Technet, ``Building Your First Domain Controller on 2012 R2", last accessed on 22nd Feb. 2016, http://social.technet.microsoft.com/wiki/contents/articles/22622.building-your-first-domain-controller-on-2012-r2.aspx, 6th MAY 2014.
+
+\bibitem{domainattack} 
+
+Microsoft Technet, ``Securing Domain Controllers Against Attack", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/library/dn535497.aspx, 16th JULY 2013.
+
+\bibitem{fordiag} 
+
+Microsoft Technet, ``How Domains and Forests Work", last accessed on 22nd Feb. 2016, https://technet.microsoft.com/en-us/library/cc783351(v=ws.10).aspx, 19th NOVEMBER 2014. 
+
+\bibitem{staticIP}
+
+Brian Burgess, ``How to assign a static IP address in Windows OS (XP to 10)", last accessed on 27th Jun. 2016, http://www.howtogeek.com/howto/19249/how-to-assign-a-static-ip-address-in-xp-vista-or-windows-7/, 10th NOVEMBER 2013.
+
+\end{thebibliography}
+
+
+\end{document}

@@ -1,0 +1,937 @@
+% declare our document type
+\documentclass[12pt]{extarticle}
+
+%%%%%%%% PACKAGES NEEDED FOR THIS DOCUMENT
+
+% allow us to put pictures in the document
+\usepackage{graphicx}
+% this line lets us use larger fonts
+\usepackage{extsizes}
+% this allows us to create "slides" in the document
+\usepackage[many]{tcolorbox}
+% this line lets us caption images inside the "slides"
+% this is neccesary since the slide doesn't allow the use of
+% \figure{} inside
+\usepackage{caption}
+% allows use of courier font
+\usepackage{courier}
+% make the table of contents links like people are used to
+% the hidelinks parts hides link outlines
+\usepackage[hidelinks]{hyperref}
+% resize the margins
+\usepackage[margin=1in]{geometry}
+% use utf8 encoding
+\usepackage[utf8]{inputenc}
+% one of the other packages complained until I put this here
+\usepackage[english]{babel}
+% allow citations
+\usepackage{cite}
+% code listings
+\usepackage{listings}
+% fix single quote in listings
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{filecontents}
+%\usepackage[noadjust]{cite}
+\usepackage{forest,kantlipsum}
+\usepackage{float}
+\usepackage{etoolbox}
+\usepackage{url}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage[labelfont=bf]{caption}
+
+%\usepackage{setspace}
+
+%%%%%%%%%%% CUSTOM ENVIRONMENT SETUP
+
+% declare a typesetting environment for code/emphasis
+\newcommand{\code}[1]{\texttt{\bfseries#1}}
+\newenvironment{codeblock}{\bfseries\texttt\bgroup}{\egroup\par}
+% better declaration of font environment
+%\DeclareTextFontCommand{\codetext}[1]{\code{#1}}
+% declare a large font environment for use in the "slides"
+\newcommand{\instruction}[1]{\Large{#1}}
+% font environment again
+%\DeclareTextFontCommand{\instruction}{\instructionfont}
+\newenvironment{instructionblock}{\Large\bgroup}{\egroup}
+% declare a "slide" text box for use in the document
+% the slide is a numbered \section{}
+\newtcolorbox[auto counter]{slide}[3][]{%
+	colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+	title={\addcontentsline{toc}{section}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}\setcounter{section}{\thetcbcounter}}}
+% declare a "subslide" text box for use in the document
+% the subslide is a numbered \subsection{}
+\newtcolorbox[auto counter,number within=section]{subslide}[3][]{%
+	colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+	title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}}}
+\renewcommand{\labelitemii}{$\circ$}
+\lstset{basicstyle=\ttfamily,keywordstyle=\bfseries\color{blue!80!black},identifierstyle=\bfseries,stringstyle=\color{red},showstringspaces=false,commentstyle=\itshape\color{green!40!black},upquote=true}
+
+% My Environments (keep these)
+\newcommand{\ben}{\begin{enumerate}}
+	\newcommand{\een}{\end{enumerate}}
+\newcommand{\bi}{\begin{itemize}}
+	\newcommand{\ei}{\end{itemize}}
+
+%\setlength{\arrayrulewidth}{1mm}
+%\setlength{\tabcolsep}{18pt}
+%\renewcommand{\arraystretch}{2.5}
+
+%%%%%%%%% SET UP OUR TITLE PAGE
+
+\begin{document}
+\title{ Static Testing: Static Analysis and Code Reviews \\ \large Important Tools for System Security}
+\author{Jon Meyer \& Ananth Jillepalli}
+\date{June 08th, 2016 \\ \hyperref[changelog]{Version 2.1}} %\today
+\renewcommand{\abstractname}{Summary}
+\begin{titlepage}
+\maketitle
+\pagenumbering{gobble}
+\begin{center}
+\includegraphics[scale=.30]{UofI}
+
+\large{CS 539: Applied Security Concepts}
+
+\vskip 40pt
+
+\end{center}
+\begin{abstract}
+Modern software is complex and difficult, if not impossible, to exhaustively test.  We do recognize that there are certain programing mistakes and constructs that contribute to many common types of bugs.  Static Testing tools and techniques are a valuable part of identifying and eliminating these flaws, assisting in the development of secure and reliable software.
+\end{abstract}
+
+
+\vfill
+\begin{center}
+This work is licensed under a \href{http://creativecommons.org/licenses/by/4.0/}{Creative Commons Attribution 4.0 International License}.
+\vskip 10pt
+\includegraphics[scale=.5]{cc}
+\end{center}
+
+\end{titlepage}
+
+%%%%%%%%%% TABLE OF CONTENTS
+
+\pagebreak
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%    BEGINNING OF ACTUAL DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagebreak
+\pagenumbering{arabic}
+\setcounter{section}{1}
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+	\pagebreak
+	\begin{slide}{Objectives of this Tutorial}{\hyperref[slide 2]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Understanding Static Testing tools and techniques
+				\ben 
+				\item Static Analysis Models and Tools
+				\item Code Walkthrough
+				\item Technical Review
+				\item Code Inspection
+				\item Using Code Review Checklists
+				\een 
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\ben
+	
+	\item Not coding is better than substandard coding. Because, one of the major causes behind software errors is poorly implemented code. The poor implementation of code is done because requirements are not carefully analyzed while implementing the code. No matter what which software development process is followed by a developer, there will always be bugs. Static Testing mitigates possibility of occurrence for most common of such issues\cite{CodeReview}.
+	
+	
+	\item Code Reviews are an efficient mechanism to root out some easily noticeable bugs from code through the use of different code review mechanisms. In this tutorial, we see a detailed explanation of what a ``Code Walk-through" means and how process of code walk-through\cite{CodeWalkthrough} occurs. There is also an explanation regarding relationship between the tendency of development groups and the benefits of this approach.
+	
+	
+	\item In this tutorial, an elaborate explanation of what a ``Technical Review" means and what the process entails. Also included with the explanation is how a technical review\cite{TechnicalReview} can be beneficial for inter-team review of code which makes the process of static testing between teams easier.
+	
+	
+	\item In addition, within the purview of this tutorial lies the explanation of what a ``Code Inspection"\cite{CodeInspection} is and how the mechanism works out in the overall process of code review and static testing.
+	
+	
+	\item Last, but not least, the tutorial will also be taking an elaborate take at explaining what ``Code Checklists" are, and how they can be used helpful in guiding any code review process, which is adopted by the team or assigned to be adapted by the team. Some standardized code checklists are mentioned and one challenge involves code review using a provided checklist\cite{NWSCodeReview}.
+	
+	\een
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+
+
+
+
+\pagebreak	
+\begin{slide}{Required Background}{\hyperref[slide 1]{\textless}\hyperref[slide 3]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		We assume that the reader of this tutorial has an extent of background knowledge in the following areas:
+		\begin{enumerate}
+			\item {Working experience on usage of computers and software applications, software programming, and coding process.}
+			\item {Basic overall idea of programming languages and syntaxes.}
+			\item {Fundamentals of data structure programming modules like stacks, queue, linked list, etc.,}
+			\item {An overall idea on general issues like code efficiency, code optimization, etc.,}
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent
+Due to restrictions on time and manpower resources, we are not able to make the ensuing tutorial to be completely self-contained from the perspective of a user. As such, the tutorial is best used when the user already has certain background skills and knowledge. The following are some areas where we expect the users of this tutorial to have some previous skills/knowledge:
+
+\ben
+
+
+\item Practical experience on using computers, installing and using common software applications. The tutorial does not explain anything regarding programming and coding process. 
+
+\item Similarly, the tutorial also does not explain how to declare functions/methods \& classes and what syntax to be used for a specific programming language. The user of this tutorial is expected to have a general idea on such topics. 
+
+\item Fundamental knowledge of advanced programming concepts like data structures (particularly linked list, which is used in a challenge) is also preferable and would enrich the user's understanding of the tutorial. 
+
+\item Finally, a common knowledge on general programming issues like knowing what is code efficiency, code optimization, debugging of code, etc., would be very helpful for the user to gain the most out of this tutorial.
+
+
+\een 
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+\pagebreak
+\begin{slide}{Hardware and Software Requirements}{\hyperref[slide 2]{\textless}\hyperref[slide 4]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		
+		\ben
+		
+			\item  The tutorial contained within this document does not use any activity or challenge which involves a virtual machine or an operating system. All of the activities and challenges are static analysis of given code. 
+			
+			\item  However, to use some of the static analysis tools which are mentioned in this tutorial, one needs a computer. In that case, a machine powerful enough to run a resource-heavy software (like MATLAB), without any major hindrances would be more than satisfactory.
+			
+		\een
+	\end{instructionblock}
+\end{slide}
+
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+% use begin{slide} and decimal numbers for slides
+\begin{slide}{Problem Statement: Development Mistakes}{\hyperref[slide 3]{\textless}\hyperref[slide 5]{\textgreater}}
+	\vskip 20 pt
+	\begin{instructionblock}
+		\ben
+		\item Human beings are not perfect.
+		\item Engineers, contrary to popular opinion, are human beings.
+		\item Ergo, engineers are not perfect (i.e., they make mistakes).
+		\item Attackers will try to exploit these mistakes, turning them into vulnerabilities.
+		\een
+	\end{instructionblock}
+\end{slide}
+\vfill
+
+\ben
+
+\item {Human beings are a species with inherently found imperfections, like any other biological species. These imperfections occur in a wide variety of instances, one of which could be imperfection in logical design or logical implementation. Such an implication gives cause to a scenario where in the aforementioned imperfect humans do something and that action becomes cause of a few shortcomings in the endeavor done by humans. }
+
+\item {Unlike the popular opinion, engineers in general and software engineers in particular, are a part of human genus. Though there are attempts at automatizing the software coding process through artificial intelligence and adaptive coding, human engineers are here to stay for the coming future.}
+
+\item {Since software engineers belong to human species as of now, these software engineers also have the same shortcomings as other humans. Therefore, software engineers have imperfections, which ultimately leads to prevalence of bugs (flaws) within the software, which is designed by the said software engineers. Code arising from improper code design can have bugs at any given time. }
+
+\item {As long as there are bugs within the software, there would be malicious entities attempting to exploit the bugs and transform the exploited bugs into standardized vulnerabilities. Once standardized, these vulnerabilities contribute to majority of software exploitations worldwide. }
+\een
+(Theological arguments aside, so long as human beings remain imperfect, the systems we create will have flaws and people with malicious intent will search for them and attempt to exploit them. )
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+\pagebreak
+% use begin{slide} and decimal numbers for slides
+\begin{slide}{Proposed Solutions: Analysis and Review}{\hyperref[slide 4]{\textless}\hyperref[slide 6]{\textgreater}}
+	\vskip 20 pt
+	\begin{instructionblock}
+	Better development practices:
+	
+	\begin{enumerate}
+		\item Careful requirements analysis
+		\item Sound design practices
+		\item Effective dynamic testing
+		\item Static analysis
+		\item Code reviews
+	\end{enumerate}
+	
+	\end{instructionblock}
+\end{slide}
+\vfill
+
+\begin{enumerate}
+\item One of the major causes of software errors is inadequate requirements determination \cite{SoftwareReq}.  Whether you're following a traditional waterfall-like process or a more ``Agile'' iterative process, at some point you need to determine what you're trying to build.  If you don't understand what the final product should look like, you're unlikely to produce it.
+\item Poor design is another major contributor to software errors \cite{Design}. Poor design leads to increased vectors of flaws/bugs in the system because a poor design will lead to even poorer implementation.
+\item Effective dynamic testing is an important part of producing reliable software.  Unfortunately, we cannot exhaustively test non-trivial programs \cite{Test}.  Indeed, testing of non-trivial software can be reduced to the \textit{halting problem} \cite{WikipediaStaticAnalysis} for which, as we all know, there is no general mechanical solution \cite{WikipediaHaltingProblem}.
+\item Static Analysis is ``a collection of algorithms and techniques used to analyze source code in order to automatically find bugs''\cite{Clang}.  Though these ``algorithms and techniques'' are often implemented in software tools, they can be executed manually.
+\item Code reviews, or, more generally, code walk-throughs, reviews and inspections, are conducted by human beings with the intention of identifying bugs and error prone/unmaintainable code, including violations of best practices and coding standards.\cite{CodeReview}
+
+Code Static Analysis and Code Reviews are often considered together under the heading ``Static testing.''  Static testing refers to tools and techniques of validating software without executing it.\cite{StaticTesting}  The remainder of this tutorial will concentrate on static testing.
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Related News: Impact of Improper Coding}{\hyperref[slide 5]{\textless}\hyperref[slide 7]{\textgreater}}
+\vskip 10 pt
+\begin{instructionblock}
+\begin{enumerate}
+	\item 11/12/2015 -- Multiple buffer overflows in libpng\cite{CVE-2015-8126}.
+	\item 12/15/2015 -- SQL injection vulnerability in Cacti 0.8.8f\cite{CVE-2015-8377}
+	\item 2011 ``Top 25 Most Dangerous Software Errors''\cite{CommonWeaknessEnumeration}
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+%\vfill
+
+\begin{enumerate}
+	\item Despite what we have seen previously in this class and elsewhere, well known software errors that should be avoided by all developers are still being encountered.  Last November (2015) for instance, a buffer overflow vulnerability was found in libpng \cite{CVE-2015-8126}.
+	\item Only a month later an SQL injection vulnerability was found in host\_new\_graphs\_save a part of Cacti 0.8.8.f (and, presumably, earlier versions) \cite{CVE-2015-8377}.
+	\item The fact that programmers keep making the same types of mistakes is demonstrated by the 2011 list of the top 25 ``Common Weakness Enumeration'' listing\cite{CommonWeaknessEnumeration}. Buffer overflow and SQL injection vulnerabilities are numbers one and three on the previously mentioned list, and appeared on previous list versions, but we still encounter them.
+\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Static Testing}{\hyperref[slide 6]{\textless}\hyperref[slide 8]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Static testing attempts to partially validate software without executing it.\cite{StaticTesting} 
+			\item Typically divided into:
+			\ben
+			\item Static Analysis
+			\item Code reviews
+			\een
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item[Note:] From my own testing experience, I can tell you that dynamic testing is expensive and impossible to do exhaustively. The fact that a tester or developer cannot exhaustively test a non-trivial program is well known by software testing and development community\cite{WikipediaHaltingProblem}
+\item Static testing, via static analysis and code reviews, attempts to find common errors in design and implementation\cite{StaticTesting}.
+\ben
+	\item More on Static Analysis in \underline{\hyperref[slide 5]{slide 5}}.
+	\item More on Code Reviews in \underline{\hyperref[slide 9]{slide 9}}. 	
+\een
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Static Analysis}{\hyperref[slide 7]{\textless}\hyperref[slide 9]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Static Analysis uses mechanical methods (i.e., software tools) to statically validate software\cite{StaticAnalysisTools}.
+			\item Generally speaking, static analysis tools:
+			\ben
+			\item Operate without regard to what the code is intended to do\cite{StaticAnalysisTools}.
+			\item Look for known poor programming practices\cite{StaticAnalysisTools}.
+			\item Look for certain well understood programming errors\cite{StaticAnalysisTools}.
+			\een
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Just as you can't prove software works through dynamic testing, static analysis/static testing in general, cannot completely validate non-trivial software\cite{WikipediaHaltingProblem}\cite{WikipediaStaticAnalysis}.
+\item Typically, static analysis tools can help find potential problems in software without execution of the code. These problems are generally related to known poor, risky or sloppy programming practices\cite{StaticAnalysisTools}.  Because executing the software is not required, static analysis can be conducted relatively early in the software development life cycle (SDLC), allowing errors to be caught and detected early.
+\item With a generalization, all of the static analysis tools are usually capable of:
+	\ben
+		\item Carrying out static analysis without any concern or regard towards what actions, the code is intended to perform.
+		\item Inspecting the given code for commonly found poor programming practices.
+		\item Inspect the given code for previously documented programming errors.
+	\een 
+\end{enumerate}
+
+\vspace{4mm}
+\noindent
+\textbf{Side Note:} Static Application Security Testing (SAST) is a specialization of static analysis methodologies for security applications. To know more information, see \cite{SAST}.
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Static Analysis Models}{\hyperref[slide 8]{\textless}\hyperref[slide 10]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Syntax and construct analysis\cite{FindingBugsisEasy}.
+	\item Class structure and inheritance analysis\cite{StaticAnalysisTools}.
+	\item State machine model analysis\cite{StaticAnalysisTools}
+	\item Control and data flow graph analysis\cite{StaticAnalysisTools}
+	\end{enumerate}
+
+	\end{instructionblock}
+\end{slide}
+%\vfill
+	\begin{enumerate}
+	\item Syntax and construct analysis is the most basic level of static analysis, which performs strict syntax checking (often much stricter than a compiler) along with a search for code idioms (common patterns), that are likely known sources of bugs\cite{FindingBugsisEasy}.
+	\item Class structure and inheritance analysis is essentially an extension of syntax and construct analysis.  Applied to object oriented languages, this looks at relationships between classes, looking for code idioms that are bug prone\cite{StaticAnalysisTools}.
+	\item Ultimately, every program is a state machine.  To the extent that code can be abstracted into a state machine and potentially be analyzed by static analysis tools to inspect for likely problems\cite{MappingofStateMachines}.
+	\item Using Control and data flow graph analysis, more advanced analysis tools can identify potential bugs, while similar techniques can be applied in code optimizations
+	\cite{WikipediaControl_flow_graph}\cite{WikipediaData-flow_analysis}.
+	\end{enumerate}
+
+\vspace{4mm}
+\noindent	
+\textbf{Side Note:} One challenging area for both static and dynamic testing is emergent behaviors.  It is hard enough to test to make sure that code does what is intended.  It is even more difficult to demonstrate that it does not do anything unintended.  That is particularly true when you take two or more pieces of ``working'' functionality and integrate them into a single system.  Often the ``working'' pieces of software interact in unexpected and undesirable ways. What would be helpful is, a way to demonstrate that code has the intended functionality but, \textit{no other functionality}.   For more information on an approach to doing just that see\cite{Daniel}.
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Static Analysis Tools}{\hyperref[slide 9]{\textless}\hyperref[slide 11]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Compilers / Interpreters / Assemblers\cite{WikipediaStaticAnalysisTools}
+	\item Lint and variants (e.g., PC-LINT, Splint)\cite{WikipediaStaticAnalysisTools}
+	\item Cppcheck\cite{WikipediaStaticAnalysisTools}
+	\item Findbugs (for Java)\cite{WikipediaStaticAnalysisTools}
+	\item Veracode\cite{WikipediaStaticAnalysisTools}
+	\end{enumerate}
+
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Your compiler, interpreter or assembler is your second line of defense (you are the first) against errors in your code.  They tend to have different configuration options available.  For gnu compilers (e.g., gcc and g++), I recommend using: -Wall, which turns on most of the gnu warnings, and -Werror, which treats warning as errors.  This forces programmers to address their compiler warnings before they can move on.
+\item Lint and its variants apply more stringent C (and, sometimes, C++) syntax rules to identify poor and non-portable constructs that are likely to result in bugs.  There are Lint like tools for other languages, but Lint's primary focus is pn the C family\cite{WikipediaLint}.
+\item More extensive static analysis of C and C++ code can be conducted using Cppcheck, a freely available package under the GPL.  Cppcheck includes checks for array bound overruns, unused functions in classes, uninitialized variables' memory/resource leaks and appropriate use of STL constructs\cite{WikipediaCppcheck}.  
+\item FindBugs is a static analysis tool for Java.  It is configurable, allowing users to write custom rules and detectors.  Unlike tools like Lint and Cppcheck, rather than analyzing source code, FindBugs analyzes Java byte-code\cite{WikipediaFindBugs}.
+\item Veracode is a commercial analyzer intended to perform SAST.  Veracode operates by analyzing application binaries for security issues without the need for source code availability\cite{WikipediaStaticAnalysisTools}.
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Static Analysis Tools -- Our Observations}{\hyperref[slide 10]{\textless}\hyperref[slide 12]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item There exist powerful tools for catching potential bugs and deviations from standard coding practices.
+	\item High rate of false positives.
+	\item Therefore, ignoring false positives leads to a maintenance nightmare.
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\noindent
+These are my own observations from my experience with static analysis tools over the past thirty-five years:
+\begin{enumerate}
+\item Let's think about the simplest case. If your compiler or interpreter encountered a syntax error and, rather than producing an error or a warning it silently guessed what you meant and went on, it would be much harder to debug programs.  Static analysis tools give you information about portions of your code that seem likely to have errors, allowing you to do something about it, without having to wait and find a bug in execution.
+\item Analyzing code is hard.  Even the best static tools can only point you to areas in your code that seem risky.  Many of these findings will prove to be ``false positives''; which means a code that's error free but fits some signature of a potential bug that particular tool uses.  This is particularly true when you're writing new code that takes advantage of legacy code that may be ``known'' to work but that wasn't developed according modern standards.
+\item There is a tendency for development groups to not want to spend time revising code to eliminate false positives.  They either ignore them or turn them off in some way (different tools offer different mechanisms for this).  Ignoring false positives can lead to either build output that is so flooded with them that a new warning af a real problem will be missed, or, if a warning is turned off (particularly if a warning is turned off globally), to the warning not appearing when it would be more meaningful.
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Code Reviews}{\hyperref[slide 11]{\textless}\hyperref[slide 13]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Code reviews are a type of static testing that focuses on human review of code in an attempt to identify errors, particularly those that result from a misunderstanding of the design or from deviations from development standards.\cite{StaticTesting}
+	\item In order of increasing formality, reviews can be classified into three categories:
+	\ben
+		\item Code Walkthrough 
+		\item Technical Review
+		\item Code Inspection
+	\een
+	\end{enumerate}	
+	\end{instructionblock}
+	
+\begin{enumerate}
+	\item The type of static analysis which is carried out and led by humans is called as \textit{Code Reviews}. Since code reviews are carried out by a group of humans, they are usually effective in weeding out design errors or poor development practices.
+	
+	\item Depending upon several factors, code reviews are generally classified into three types. They are as follows:
+	\ben
+		\item \textbf{Code Walk-through}: More on Code Walk-through in \underline{\hyperref[slide 11]{slide 11}}.
+		\item \textbf{Technical Review}: More on Technical Reviews in \underline{\hyperref[slide 12]{slide 12}}.
+		\item \textbf{Code Inspection}: More on Code Inspection in \underline{\hyperref[slide 13]{slide 13}}.  
+	\een
+	
+\end{enumerate}
+	
+\end{slide}
+%\vfill
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+\pagebreak
+\begin{slide}{Code Reviews -- Common Features}{\hyperref[slide 12]{\textless}\hyperref[slide 14]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Participants should be adequately prepared.
+	\item Ideally, preparation includes generating a list of findings up front.\cite{CodeInspection}
+	\item Review is led by a team member.\cite{TechnicalReview}
+	\item A record is kept of issues found, which are tracked until closed.\cite{CodeWalkthrough}
+	\end{enumerate}
+	
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Review participants should be prepared.  The degree of preparation varies with the formality of the review and the complexity of the code being reviewed.  For a walk-through\cite{CodeWalkthrough} of simple code, general familiarity with the task and the code base may be adequate.  For a formal inspection of more complex code, significant study of the code and supporting document (e.g., requirements and design) may be needed.
+
+\item Often reviewers will notice some of the same things.  It can be helpful if a list of items can be circulated in advance so that a decision can be made about which can be put on the ``findings'' list without discussion and which need further discussion in the review meeting.\cite{CodeInspection}
+
+\item Reviews are not free-forum meetings.  Someone leads the process, though the leader varies with the type of review.
+
+\item A list of ``findings'' or issues found is kept by a scribe, generally someone other than the leader of review team. This is to help assure items identified in the review are not forgotten.\cite{TechnicalReview}
+\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Code Walkthrough}{\hyperref[slide 13]{\textless} \hyperref[slide 15]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Developer led\cite{CodeWalkthrough}.
+	\item Peer reviewed\cite{CodeWalkthrough}.
+	\item Degree of formality varies\cite{CodeWalkthrough}.
+	\item Aim is as much team member education as defect hunting\cite{CodeWalkthrough}.
+	\end{enumerate}
+	
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Code walk-through reviews are typically led by the person that wrote the code\cite{CodeWalkthrough}.
+\item Members of the review team are typically from the developer's immediate work group\cite{CodeWalkthrough}.
+\item The degree of formality can vary from ``Hey, you guys got a couple of minutes to take a look at something for me?'' to a scheduled meeting with assigned roles.  In paired programming environments, the walk-through can even occur contemporaneously with writing the code\cite{CodeWalkthrough}.
+\item Code walk-through reviews often serve the dual purposes of reviewing the code and familiarizing other members of the team with the code base\cite{CodeWalkthrough}.
+\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Technical Review}{\hyperref[slide 14]{\textless} \hyperref[slide 16]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item Led by a trained moderator\cite{TechnicalReview}.
+	\item Reviewed by peers and technical experts\cite{TechnicalReview}.
+	\item Well defined review process with varying degree of formality\cite{TechnicalReview}.
+	\item Broad range of purposes, including finding defects, evaluating alternative implementations and resolving technical issues\cite{TechnicalReview}.
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Ideally, a technical review is led by a trained moderator who is not the code author, who is an experienced reviewer and developer who is very familiar with the review process, and knows how to keep it on track and make sure that important steps are not missed\cite{TechnicalReview}.
+\item Technical reviews often include individuals from beyond the local team. For instance, the review team might be augmented by people with specific domain expertise or knowledge of regulatory concerns\cite{TechnicalReview}.
+\item The degree of formality will vary, though you can generally expect technical review to be more formal and require more preparation than a code walk-through\cite{TechnicalReview}.
+\item While walk-through reviews are often quite specifically about the code being reviewed, technical reviews more formally consider the broader system\cite{TechnicalReview}.
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: Code Inspection}{\hyperref[slide 15]{\textless} \hyperref[slide 17]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate} 
+	\setlength{\parskip}{0pt}
+	\item Led by a trained moderator\cite{CodeInspection}.
+	\item Well defined formal review process with rules, checklists and entry / exit requirements\cite{CodeInspection}.
+	\item Defined review team roles (e.g., Moderator, Recorder, Reader, Author)\cite{CodeInspection}.
+	\item Formal follow-up process with time-lines\cite{CodeInspection}.
+	\item Purpose to correct defects in the code and to find process improvements\cite{CodeInspection}.
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Code inspections are led by a trained moderator, who is an experienced reviewer and developer who is very familiar with the review process, and knows how to keep it on track and makes sure that important steps are not missed.  This role is never taken up by code author\cite{TechnicalReview}.
+\item Code inspection process is the most formal.  There is generally a well defined formal process with procedures covering what needs to happen before, during, and after the inspection meeting(s). There are formal requirements for entry (e.g., supporting design documents reviewed approved) and exit (e.g., all review findings addressed and all unit tests passing with 100\% code coverage)\cite{TechnicalReview}.
+\item The major roles for code inspections should be clearly specified by the inspection process.  For example, the moderator might be responsible for ensuring that all entry and exit requirements are met, for conducting the review meeting, for forwarding process improvement suggestions to the appropriate people and, ultimately, for approving the code\cite{TechnicalReview}.
+\item Code-inspection processes typically include directions on how to follow-up on review findings and the expected time-lines for completion\cite{TechnicalReview}.
+\item Code inspections are often part of a continuous improvement process.  They look at ways in which the software development process can improve, as well as looking for defects in the specific code under review.  For instance, if inspection teams are finding that similar errors are being made by different programmers, they might recommend changes in training or coding standards to help avoid those mistakes\cite{TechnicalReview}.
+\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Code Review Checklists}{\hyperref[slide 16]{\textless} \hyperref[slide 18]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate} 
+	\item Having a code review checklist can help guide your code review process.
+	\item There are many standardized code review checklists available on the web (e.g., \cite{BaldwinCodeReview},\cite{CodeInspectionRules}, \cite{NWSCodeReview}, and many more).
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item A code review checklist is a good way to guide your code reviews, to help keep the review team focused and reduce the likelihood that your team will forget to look for common errors and pay the price of overlooking.  If your team finds that certain types of errors are recurring in the team's code you should consider adding those errors to your review checklist.
+\item Review checklists can vary from ones with a single page list to the ones with dozens of pages long lists (e.g., \cite{BaldwinCodeReview}). One should find a checklist that comes close to meeting the needs of one's team and use it as a base, revising the list as one works with it and come to a better understanding of what's best for one's team and its working environments.
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge: Technical Review}{\hyperref[slide 17]{\textless} \hyperref[slide 19]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate}
+	\item This challenge is intended to be a team effort, with ideally 3-4 people in the team\textbf{*}.	 
+	\item All members of the team, take five minutes to read through the National Weather Service checklist at \cite{NWSCodeReview}. (Also given in folder \texttt{Challenge})
+	\item Using the check-list, work towards reviewing the code\textbf{**}.  One person in the team, act as a moderator: to keep the process moving, and another person as a recorder/scribe.  What defects does one see?
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\noindent
+\textbf{*} But, the challenge can be taken up with one person acting as all the roles needed, though it would not give the same experience as corporate technical review process.
+
+\vspace{4mm}
+\noindent
+\textbf{**} The code file and the check-list are given in the folder \texttt{Challenge}. File with code is titled as \texttt{Code File} and checklist file is titled as \texttt{OHD-Checklist}.
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Questions}{\hyperref[slide 18]{\textless} \hyperref[slide 20]{\textgreater}}
+	\vskip 10pt
+	\begin{instructionblock}
+	\begin{enumerate} 
+	\item In the \texttt{Code File} of the challenge, there was a potential for a major memory leak in the ``UberNode''.  What was it?
+	\item What is the difference between Static Analysis and Static Testing?.
+	\item How do we know we can't write an algorithm to prove a non-trivial program is correct?
+	\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+%\vfill
+\begin{enumerate}
+\item Since LinkedListNode does not have a virtual destructor, when an instance of UberNode is destroyed via a pointer to it's parent, UberNode's destructor will not be called.  That means the destructors of UberNode's members (e.g., m\_map) will not be called so they will not have a chance to free any memory they allocate.
+\item Static Analysis is a subset of Static Testing.  Static Testing involves using mostly mechanical methods to analyze software without executing it.  Static Testing encompasses both Static Analysis and various forms of Code Review.
+\item Trying to write an algorithm to prove that a non-trival program is correct is reducible to the ``Halting Problem'' witch has been proven (by Alan Turing) to be unsolvable (caveat, the proof was actually for a Turing Machine, which has infinite resources, not for a resource constrained physical computer) .
+\end{enumerate}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Conclusion}{\hyperref[slide 19]{\textless} \hyperref[slide 21]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+		\item It is known that as long as human beings continue to write software, it is inevitable to avoid coming across bugs in our code, to some extent.
+		\item Many bugs follow recognizable patterns that can be detected by Static Testing, either by the mechanical methods of Static Analysis or by Code Review processes.
+		\item Proper use of Static Testing can help find and eliminate bugs that would be difficult and costly to remove using dynamic and automated mechanisms.
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\ben
+	\item { As derived in problem statement of this tutorial, human beings not being perfect creates a significant impact on design of a system and development of the needed software code. Therefore, as long as human beings continue to write software code, coming across bugs/flaws in software is inevitable to a certain degree. }
+	\item { That said, a wide variety of flaws/bugs occur because of relatively similar causes. These cause have reoccurring patterns, thus making them easily recognizable either by Static Analysis (manual and/or automated) or by Code Review mechanisms. }
+	\item { Well placed usage of static testing helps in making easier, the process of finding and eliminating commonly found flaws/bugs in a software code. The same goal can be achieved by dynamic and automated testing methods, but they are relatively costlier and difficult to do so, when compared with static testing.  }
+\een
+
+
+%To present this tutorial the files ``Bad Code.pdf'' and ``OHD\_C++\_Programming\_Peer\_Review\_Checklist.pdf'' are needed.
+%Static Analyisis tools may be demonstrated using the VM ``Static Analysis Demo.''  The user id is jon and the password is citats.  The demo source files are in the ~jon/Static Analysis subdirectory.
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Appendix: Solution and Change-log}{\hyperref[slide 20]{\textless}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Solution to the challenge
+			\item Change-Log
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\ben
+
+\item {\textbf{Solution to the challenge:}}
+\noindent
+The solution to technical review checklist challenge is in the sub-folder named \texttt{Solution} in the folder \texttt{Challenge}.
+ 
+\textbf{NOTE:} However, it is to be noted that, due to the open-ended nature of technical reviews in general, the solution might not be reflective of what is absolutely right, but it acts a guide, using which, the user attains better understanding of good coding practices.
+
+\textbf{NOTE 2:} The given challenge deals with a very veteran and seasoned checklist. Thus, it brings out even the minute inconsistencies in the code. Subsequently, spending a lot of time on correcting the spacing, naming conventions of the code is a waste of time as there are tools to automate those kind of modifications.  
+\pagebreak
+
+\item {\textbf{Change-Log:}}
+\label{changelog}
+
+\vspace{6mm}
+
+{
+	\begin{tabular}{ |p{1cm}|p{3cm}|p{3cm}|p{3cm}|  }
+		\hline
+		\multicolumn{4}{|c|}{Static Testing: Static Analysis \& Code Reviews Tutorial} \\
+		\hline
+		\texttt{\textbf{Ver.}} & \texttt{\textbf{Date}} & \texttt{\textbf{Authors}} & \texttt{\textbf{Changes}} \\
+		\hline
+		v1 & Apr. 18th 2016 & Jon Meyer & First draft of tutorial. \\
+		\hline
+		v2 & Jun. 01st 2016 & Ananth Jillepalli & Major content addition and remodeled the structure. \\
+		\hline
+		v2.1 & Jun. 08th 2016 & Ananth Jillepalli & Added appendix and other minor enhancements. \\
+		\hline
+	\end{tabular}
+}
+
+\een
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+ 		
+% bibliography on last page
+\pagebreak
+% this style of bibliography shows urls
+\bibliographystyle{IEEEtran}
+
+\begin{thebibliography}{9}
+
+\bibitem{SoftwareReq}
+	Nelson, Mike et al.
+	``Curing the Software Requirements And Cost Estimating Blues,'' 
+	\textit{Project Management}.
+	\date{November-December 1999}.
+	\url{http://www.dau.mil/pubscats/pubscats/pm/articles99/nelsonnd.pdf},
+	downloaded
+	\date{11 April 2016}.
+
+
+\bibitem{Design}
+	Carlson, D.
+	``Software Design Using C++ -- Software Engineering,'' Saint Vincent College - Computing and Information Science Department,
+	\date{31 January 2016}.
+	\url{http://cis.stvincent.edu/html/tutorials/swd/softeng/softeng.html},
+	downloaded
+	\date{11 April 2016}.
+
+
+\bibitem{StaticAnalysisTools}
+	Easterbrook, S.
+	``Lecture 19: Static Analysis Tools,'' University of Toronto - Department of Computer Science,
+	\date{2012}.
+	\url{http://www.cs.toronto.edu/~sme/CSC302/notes/19-static-analysis.pdf},
+	downloaded
+	\date{17 April 2016}.
+
+
+\bibitem{Test}
+	Kothari, J.
+	\textit{Topics in Software Testing: An Introduction}.
+	\url{https://www.cs.drexel.edu/~jhk39/teaching/cs576su07/L1.pdf}, downloaded
+	\date{11 April 2016}.
+
+
+\bibitem{FindingBugsisEasy}
+	Hovemeyer, D. and Pugh, W
+	\textit{Finding Bugs is Easy}.
+	\url{https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwjRkMXV0J3MAhVGLmMKHQOJBgYQFggkMAE&url=https%3A%2F%2Fwiki.uta.edu%2Fdownload%2Fattachments%2F76972080%2Fruthwika.pptx%3Fversion%3D1%26modificationDate%3D1364344621000&usg=AFQjCNERx2ApnxCYcjuIGwoXtpokxSk6TQ&sig2=lo1-xLB2su3iZ7bq_klBYg}, downloaded
+	\date{17 April 2016}.
+
+\bibitem{SAST}
+	Brucker, A. and Sodan, U.
+	\textit{Deploying Static Application Security Testing
+	on a Large Scale}.
+	\url{https://www.brucker.ch/bibliography/download/2014/brucker.ea-sast-expierences-2014.pdf}, downloaded
+	\date{17 April 2016}.
+
+
+\bibitem{MappingofStateMachines}
+	Saadatmand, M. and Cicchetti, A.
+	``Mapping of State Machines to Code: Potentials and Challenges.''
+	\textit{ICSEA 2014 : The Ninth International Conference on Software Engineering Advances}.
+	\url{http://www.es.mdh.se/pdf_publications/3668.pdf}, downloaded
+	\date{17 April 2016}.
+
+\bibitem{WikipediaHaltingProblem}
+	\textit{Halting problem}.
+	\url{https://en.wikipedia.org/wiki/Halting_problem}, accessed online
+	\date{11 April 2016}.
+
+\bibitem{Clang}
+	\textit{Clang Static Analyzer}.
+	\url{http://clang-analyzer.llvm.org/}, accessed online 
+	\date{17 April 2016}.
+
+\bibitem{CodeReview}
+	\textit{Code Review}.
+	\url{http://www.tutorialspoint.com/software_testing_dictionary/code_review.htm}, accessed online 
+	\date{17 April 2016}.
+
+\bibitem{StaticTesting}
+	\textit{Static Testing}.
+	\url{http://www.tutorialspoint.com/software\_testing\_dictionary/static\_testing.htm}, accessed online 
+	\date{17 April 2016}.
+
+
+\bibitem{CVE-2015-8126}
+	\textit{CVE-2015-8126}.
+	\url{https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8126}, accessed online 
+	\date{17 April 2016}.
+
+
+\bibitem{CVE-2015-8377}
+	\textit{CVE-2015-8377}.
+	\url{https://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2015-8377}, accessed online 
+	\date{17 April 2016}.
+
+
+\bibitem{CommonWeaknessEnumeration}
+	\textit{Common Weakness Enumeration}.
+	\url{http://cwe.mitre.org/top25/}, accessed online 
+	\date{17 April 2016}.
+
+
+	
+\bibitem{WikipediaStaticAnalysis}
+	\textit{Static program analysis}.
+	\url{https://en.wikipedia.org/wiki/Static_program_analysis}, accessed online
+	\date{11 April 2016}.
+	
+\bibitem{WikipediaStaticAnalysisTools}
+	\textit{List of tools for static code analysis}.
+	\url{https://en.wikipedia.org/wiki/List_of_tools_for_static_code_analysis}, accessed online
+	\date{17 April 2016}.
+	
+\bibitem{WikipediaLint}
+	\textit{Lint (software)}.
+	\url{https://en.wikipedia.org/wiki/Lint_(software)}, accessed online
+	\date{17 April 2016}.
+	
+\bibitem{WikipediaCppcheck}
+	\textit{Cppcheck}.
+	\url{https://en.wikipedia.org/wiki/Cppcheck}, accessed online
+	\date{17 April 2016}.
+
+\bibitem{WikipediaFindBugs}
+	\textit{FindBugs}.
+	\url{https://en.wikipedia.org/wiki/FindBugs}, accessed online
+	\date{17 April 2016}.
+
+
+\bibitem{WikipediaControl_flow_graph}
+	\textit{Control flow graph}.
+	\url{https://en.wikipedia.org/wiki/Control_flow_graph}, accessed online
+	\date{17 April 2016}.
+
+\bibitem{WikipediaData-flow_analysis}
+	\textit{Data-flow analysis}.
+	\url{https://en.wikipedia.org/wiki/Data-flow_analysis}, accessed online
+	\date{17 April 2016}.
+
+\bibitem{Daniel}
+	De Leon, D.;  Alves-Foss, J. and Oman, P.,
+	``Implementation-Oriented Secure Architectures,''. 
+	textit{2007. 40th Annual Hawaii International Conference on System Sciences}, Waikoloa, HI, 2007, pp. 278a-278a.
+	\url{http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4076945&isnumber=4076362}, downloaded
+	\date{17 April 2016}.
+
+\bibitem{StaticTesting}
+	\textit{Static Testing}.
+	\url{http://www.tutorialspoint.com/software_testing_dictionary/static_testing.htm}, accessed online
+	\date{17 April 2016}.
+	
+\bibitem{CodeInspection}
+	\textit{Code Inspection}.
+	\url{http://www.tutorialspoint.com/software_testing_dictionary/code_inspection.htm}, accessed online
+	\date{17 April 2016}.
+		
+\bibitem{TechnicalReview}
+	\textit{Code Review}.
+	\url{http://www.tutorialspoint.com/software_testing_dictionary/code_review.htm}, accessed online
+	\date{17 April 2016}.
+		
+\bibitem{CodeWalkthrough}
+	\textit{Code Walkthrough}.
+	\url{http://www.tutorialspoint.com/software_testing_dictionary/code_walkthrough.htm}, accessed online
+	\date{17 April 2016}.
+
+\bibitem{NWSCodeReview}
+	``C++ Coding Standards and Guidelines Peer Review Checklist,''
+	\date{16 November 2006}.
+	\url{http://www.nws.noaa.gov/oh/hrl/developers_docs/OHD_C++_Programming_Peer_Review_Checklist.doc}, downloaded
+	\date{17 April 2016}.
+
+\bibitem{BaldwinCodeReview}
+	``An Abbreviated C++ Code Inspection Checklist,''
+	\date{27 October 1992}.
+	\url{http://www.literateprogramming.com/Baldwin-inspect.pdf}, downloaded
+	\date{17 April 2016}.
+		
+\bibitem{CodeInspectionRules}
+	\textit{Code Inspection Rules}.
+	\url{http://www.oualline.com/talks/ins/inspection/c_check.html}, accessed online
+	\date{17 April 2016}.
+
+
+
+%example biblio entry
+\iffalse
+\bibitem{Winkler15}
+    Winkler, I.
+    2015
+    \textit{The `Sophisticated Attack' Myth}\\
+    ComputerWorld, The Internet, 2015.
+\fi 
+
+\end{thebibliography}
+
+
+\end{document}

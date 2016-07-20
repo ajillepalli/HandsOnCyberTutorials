@@ -1,0 +1,1191 @@
+% declare our document type
+\documentclass[12pt]{extarticle}
+
+%%%%%%%% PACKAGES NEEDED FOR THIS DOCUMENT
+
+% allow us to put pictures in the document
+\usepackage{graphicx}
+% this line lets us use larger fonts
+\usepackage{extsizes}
+% this allows us to create "slides" in the document
+\usepackage[many]{tcolorbox}
+% this line lets us caption images inside the "slides"
+% this is neccesary since the slide doesn't allow the use of
+% \figure{} inside
+\usepackage{caption}
+% allows use of courier font
+\usepackage{courier}
+% make the table of contents links like people are used to
+% the hidelinks parts hides link outlines
+\usepackage[hidelinks]{hyperref}
+% resize the margins
+\usepackage[margin=1in]{geometry}
+% use utf8 encoding
+\usepackage[utf8]{inputenc}
+% one of the other packages complained until I put this here
+\usepackage[english]{babel}
+% allow citations
+\usepackage{cite}
+% code listings
+\usepackage{listings}
+% fix single quote in listings
+\usepackage{textcomp}
+\usepackage{filecontents}
+%\usepackage[noadjust]{cite}
+\usepackage{forest,kantlipsum}
+\usepackage{float}
+\usepackage{etoolbox}
+\usepackage{url}
+\usepackage{cleveref}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage[labelfont=bf]{caption}
+
+%%%%%%%%%%% CUSTOM ENVIRONMENT SETUP
+
+% declare a typesetting environment for code/emphasis
+\newcommand{\code}[1]{\texttt{\bfseries#1}}
+\newenvironment{codeblock}{\bfseries\texttt\bgroup}{\egroup\par}
+% better declaration of font environment
+%\DeclareTextFontCommand{\codetext}[1]{\code{#1}}
+% declare a large font environment for use in the "slides"
+\newcommand{\instruction}[1]{\Large{#1}}
+% font environment again
+%\DeclareTextFontCommand{\instruction}{\instructionfont}
+\newenvironment{instructionblock}{\Large\bgroup}{\egroup}
+% declare a "slide" text box for use in the document
+% the slide is a numbered \section{}
+\newtcolorbox[auto counter]{slide}[3][]{%
+	colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+	title={\addcontentsline{toc}{section}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}\setcounter{section}{\thetcbcounter}}}
+% declare a "subslide" text box for use in the document
+% the subslide is a numbered \subsection{}
+\newtcolorbox[auto counter,number within=section]{subslide}[3][]{%
+	colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+	title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}}}
+\renewcommand{\labelitemii}{$\circ$}
+\lstset{basicstyle=\ttfamily,keywordstyle=\bfseries\color{blue!80!black},identifierstyle=\bfseries,stringstyle=\color{red},showstringspaces=false,commentstyle=\itshape\color{green!40!black},upquote=true}
+
+% My Environments (keep these)
+\newcommand{\ben}{\begin{enumerate}}
+	\newcommand{\een}{\end{enumerate}}
+\newcommand{\bi}{\begin{itemize}}
+	\newcommand{\ei}{\end{itemize}}
+
+
+%\setlength{\arrayrulewidth}{1mm}
+%\setlength{\tabcolsep}{18pt}
+%\renewcommand{\arraystretch}{2.5}
+
+%%%%%%%%% SET UP OUR TITLE PAGE
+
+\begin{document}
+	\title{ The Art of Secure Web Browsing \\ \large Security and Privacy in Web Browsers}
+	\author{Ananth Jillepalli}
+	\date{May 31st, 2016 \\ \hyperref[changelog]{Version 2.1}} %\today
+	\renewcommand{\abstractname}{Summary}
+	\begin{titlepage}
+		\maketitle
+		\pagenumbering{gobble}
+		\begin{center}
+			\includegraphics[scale=.5]{UofI}
+			
+			\large{CS 539: Applied Security Concepts}
+			
+			\vskip 40pt
+			
+		\end{center}
+		\begin{abstract}
+			Web Browsers are a significant threat to system security and individual privacy. The flexibility of functionality offered by Web Browsers comes at a cost of rampantly sheer number of security vulnerabilities and privacy exploitations. In the oncoming tutorial, we will detail several steps to secure Web Browsers from most prevalent attacks and also to protect your identity and data privacy, when on-line.
+		\end{abstract}
+		
+		
+		\vfill
+		\begin{center}
+			This work is licensed under a \href{http://creativecommons.org/licenses/by/4.0/}{Creative Commons Attribution 4.0 International License}.
+			\vskip 10pt
+			\includegraphics[scale=.5]{cc}
+		\end{center}
+		
+	\end{titlepage}
+	
+	%%%%%%%%%% TABLE OF CONTENTS
+	
+	\pagebreak
+	\tableofcontents
+	
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%    BEGINNING OF ACTUAL DOCUMENT
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	\pagebreak
+	\pagenumbering{arabic}
+	\setcounter{section}{1}
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	\pagebreak
+	\begin{slide}{Objectives of this Tutorial}{\hyperref[slide 2]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Browser Hardening:
+				\ben 
+				\item Keeping Browsing Data Secure.
+				\item Enhancing Privacy by Mitigating Tracking.
+				\item Increasing Security by Cookie Management.
+				\item Protecting both Security and Privacy by managing Scripts, Images etc.,
+				\item Secure browsing habits [Cache and Credential management, etc.,]
+				\een 
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\ben
+	
+	\item Data not recorded is data not stolen.  As such, not allowing the browser to record browsing history is the best possible mitigation. There are other alternatives like encryption and obfuscation, but none are effective if your browser is compromised as it will always have unrestricted access to browsing data.
+	
+	
+	\item It's quite common knowledge these days, that if you are not paying for a service, then it is highly possibly that you are the product or byproduct and not the customer \cite{track}. This is done through a series of third-party trackers, who gain information about you and sell that data to advertisement companies, leading to an infringement of privacy. We will see a series of mitigations in this tutorial to enhance privacy of ourselves.
+	
+	
+	\item Cookies are one of the most vulnerable features of a web browser, with a potential to compromise the entire system of user through the cookie injection exploitation \cite{cooknews}. As such, in this tutorial, we will learn about better cookie management and thereby, increasing security of browsers.
+	
+	
+	\item Languages like JavaScript and Steganographic scripting through images is one of the other primary avenues for vulnerability exploitation. Also, Phishing is one of the major security problems related to scripting. As such, in this tutorial, we will see management of scripts and images as well, with the use of add-ons in Mozilla Firefox, natively in Google Chrome and in Internet Explorer.
+	
+	
+	\item Last, but not the least, we will also have a quick look at secure browsing habits, which includes, but is not limited to cache and credential management. On a whole, at the end of this tutorial, one can expect to gain sufficient knowledge to keep their browsers secure.
+	
+	\een
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	
+	
+	\pagebreak	
+	\begin{slide}{Required Background}{\hyperref[slide 1]{\textless}\hyperref[slide 3]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			We assume that the reader of this tutorial has an extent of background knowledge in the following areas:
+			\begin{enumerate}
+				\item {Working experience on usage of computers and software applications, like web browsers, and virtualization software.}
+				\item {Basic overall idea of computer networks and Internet.}
+				\item {Fundamentals of website features like cookies, javascript, image rendering, etc.,}
+				\item {An overall idea on general issues like data privacy, computer security, etc.,}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{4mm}
+	\noindent
+	Due to restrictions on time and manpower resources, we are not able to make the ensuing tutorial to be completely self-contained from the perspective of a user. As such, the tutorial is best used when the user already has certain background skills and knowledge. The following are some areas where we expect the users of this tutorial to have some previous skills/knowledge:
+	
+	\ben
+	
+	
+	\item Practical experience on using computers, installing and using common software applications (particularly web browsers, and virtualization software platforms). The tutorial does not explain how to navigate within the operating system's graphical user interface (GUI). Similarly, the tutorial also does not explain how to browse the Internet, how to install software applications, and how to use/navigate software applications. 
+	
+	\item An overall idea on the working of computer networks and Internet. The tutorial expects a user to understand common terms like ``web server", ``links", "websites", and ``web browser / web engines" etc., 
+	
+	\item Fundamental or very basic idea on features of a web-page or any website. The tutorial expects a user to understand technical terms like ``web cookies / cookies", ``javascript", ``image rendering", and ``graphics scalability" etc.,
+	
+	\item Also bit of exposure to computer programming would be very helpful in tackling the challenges efficiently. An overall brief idea on general computer-related issues like ``data privacy", ``computer security", ``network security", ``attacks on computer or network" etc., will help a lot.
+	
+	
+	\een 
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+
+	\pagebreak
+	\begin{slide}{Hardware and Software Requirements}{\hyperref[slide 2]{\textless}\hyperref[slide 4]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			We recommend having at least the following hardware and software specifications for smooth execution of this tutorial's activities and challenges:
+			\begin{enumerate}
+				\item {A computer which can at least boot 1 virtual machine (VM) smoothly, with no noticeable lag and delay}
+				\item {A functional virtualization software platform. For example, VMWare or VirtualBox.}
+				\item {A vanilla Windows 10 VM with Mozilla Firefox and Google Chrome installed and functioning.  }
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{4mm}
+	\noindent
+	For the purpose of getting the best experience out of this tutorial, there are certain minimum hardware and software requirements that we recommend users have at their disposal. However, this tutorial can also be carried out in lower specifications than what is recommended.
+	
+	\ben
+	
+	\item A computer powerful enough to be able to boot 1 virtual machine without any noticeable delay or log. That would mean at least a quad-core processor, 8 GB RAM, optimally two monitors (can be managed with one), and a functional keyboard and mouse.
+	
+	\item It is always recommended to use a virtual machine to run tutorials like the one available in this document so as to not destabilize one's own workstation or personal machine's environment and software configurations. To that extent, we recommend having a virtualization software installed on machine, which can be used to generate virtual machines as needed. 
+	
+	\item Though the present tutorial can be followed with any operating system which supports Mozilla Firefox and Google Chrome, to be consistent with file paths and locations, we recommend using a vanilla (default installation) Windows 10 virtual machine with Mozilla Firefox and Google Chrome installed. 
+	
+	\textbf{Note:} Please go to part \textbf{\underline{\ref{SoftwareResourceLocations}}} of the {\textbf{\hyperref[slide 22]{\underline{Appendix}}}} section for information on resources and website links to access some of the required software for the tutorial.
+	
+	\een
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+
+	\pagebreak		
+	\begin{slide}{Introduction: Web Browsers}{\hyperref[slide 3]{\textless}\hyperref[slide 5]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item {Evolution of Modular Web Browsers}
+				\item {Usage Statistics}
+				\item {Reasons for Web Browser Success}
+				\begin{enumerate}
+					\item Ease of use \& Module-based Design 
+					\item Scalable, GUI-based \& Advanced Graphics Capability
+					\item Network accessible and immediately deployable
+					\item Turing-complete virtual execution capabilities
+				\end{enumerate}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\begin{enumerate}
+			
+	
+	\item Web browsers started out as monolithic (single operational functionality), without any additional capacity apart from accessing plain websites and producing the data to the users. After few years down the lane in development, ``Web Engines" came into existence, which enhance the operational scope of web browsers to include native e-mail clients, document readers, markup language formatting, image rendering and object interaction. 
+	
+	
+	\item One of the foremost web browsers to have started usage of ``web engine" functionality was Mosaic, developed in 1993. Based on Mosaic, Netscape Navigator was developed. Later on, Internet Explorer and many other browsers like Mozilla Firefox, Google Chrome, Safari and etc., started using different web engines, like: \textit{Gecko} for Firefox, \textit{Trident} for Internet Explorer and \textit{Blink} for Google Chrome. Now-a-days, web browsers are almost full virtual machines in themselves.
+	
+	
+	\item According to StatCounter [statistics derived from hits, which are not unique, from 3 million sites, totaling more than 15 billion hits per month], by the end of 2015 - Microsoft Internet Explorer had 17.3\%, Google Chrome had 54.2\%, Mozilla Firefox had 14.61\%, Safari had 9.42\% and others constituted the remaining percentage of web browser usage share, globally, across all devices except non-Android phones \cite{stat}. Human usage of Internet and subsequently, usage of web browsers to access networks, has become so enormous that 47\% of entire world population and 88\% of United States population use at least one web browser in their lives\cite{iwsstat}.
+	
+	
+	\item As most of the service content is moving towards web-service environments, necessity and dependence on web browsers is growing. This immense dependency of humans on web browsers ultimately creates problems on an international scale.
+	\end{enumerate}
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	
+	\pagebreak
+	\begin{slide}{Problem Statement: Secure Configuration}{\hyperref[slide 4]{\textless}\hyperref[slide 6]{\textgreater}}
+		%\vskip 10 pt
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item {Problems related to security and privacy }
+				\begin{enumerate}
+					\item Phishing
+					\item Cross Site Scripting (XSS)
+					\item Cross Site Request forgery (CSRF)
+					\item Execution After Redirect (EAR)
+				\end{enumerate}
+				\item {Can be effectively countered through secure configuration}
+				\item {Lack of awareness among people about such configurations}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\begin{enumerate}
+	
+	\item Because of the flexibility, scalability, modularity, and ease-of-use provided by web browsers, they are susceptible to various kinds of attacks, both on security of the user machine and on the privacy of the user. One most popular of such attacks is Phishing attack, which is very efficient in targeting both security and privacy of a user and the machine. For example, a most common phishing attack is carried out in the form of having a dubious link asking banking and personal information, disguising the link as target's bank web site, sent out to people at a large scale. 
+	
+	
+	\item Similarly, attacks like XSS, CSRF and EAR are also common, exploiting the weakness from web application side and not from user side, for the most part. XSS is an attack where JavaScript functionality of a web browser is exploited to perform unauthorized script requests. CSRF involves duping a server into thinking an attacker is a regular user and finally, EAR deals with sending redirect links which have malicious scripts embedded in them, which execute after being redirected.
+	
+	
+	\item The attacks explained above and stated in the slide are a mere number, scratching the surface of possible attacks on web browsers. Though most common, the above mentioned attacks are not very complicated and can be easily blocked through the use of secure configurations. Secure configuration of web browser, by no means, makes it invincible against attacks, but they provide a very good defense and help secure web browsers against many common attacks. However, lack of awareness and training amongst people regarding such secure configuration of web browsers causes many people to be victims of such attacks and compromise their privacy and/or data integrity.
+	\end{enumerate}
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	\pagebreak
+	\begin{slide}{Related News: Recent Exploits}{\hyperref[slide 5]{\textless}\hyperref[slide 7]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Microsoft Edge Storing Private Data (29th Jan. 2016) \cite{edgenews}
+				\item Firefox Leads Private Browsing with In-built Tracking Protection (4th Nov. 2016) \cite{ffnews}
+				\item Web Browsers are a Goldmine for Attackers (13th Oct. 2015) \cite{goldnews}
+				\item Cookies Can be Used to Access Private Data, Even Over HTTPS Connections (25th Sept. 2015) \cite{cooknews}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\begin{enumerate}
+		
+	\item In a very recent news article \cite{edgenews}, a vulnerability in Microsoft Edge's incognito ``InPrivate" mode has been exposed, where the data of websites visited while browsing in \textit{InPrivate} mode can be obtained by examining Web Cache files stored on the hard disks of users. Visited sites can be found in same ``Container\_n" table that stores tab history from normal browsing.
+	
+	
+	\item During November of 2015 \cite{ffnews}, Mozilla Firefox became the first Web Browser to have taken a step forward in having inbuilt protection against tracking by automatically blocking a list of trackers. This is resulted in up to 44\% faster page loading time.
+	
+	
+	\item In a separate article published on 13th October of 2015 \cite{goldnews}, Madelyn Bacon of TechTarget wrote that browsers using Flash, Java and Silverlight specifically are often targeted, though the fault often lies not with browsers, but with third-party software extensions. She quotes that, in most cases, even if browser developers knew about the vulnerability, they cannot do anything as the fix should be carried out by respective third party developers.
+	
+	
+	\item During September of 2015 \cite{cooknews}, United States Computer Emergency Response Team (CERT) issued a vulnerability note warning that cookies in web browsers could allow remote attackers to bypass secure sessions so as to gain access to private information, with the help of cookie injection attacks.
+	
+	
+	\item All of these and many other events strongly suggested one thing: \textbf{Users} should be more aware about security and privacy configurations, for their own sake. To that end, we will be going through a ``Browser Hardening" Tutorial in this presentation.
+	\end{enumerate}
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	\pagebreak
+	\begin{slide}{Outline of Tutorial}{\hyperref[slide 6]{\textless}\hyperref[slide 8]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Configuring Google Chrome for Security \& Privacy 
+				\item Configuring Mozilla Firefox for Security \& Privacy
+				\item Configuring Internet Explorer and Microsoft Edge
+				\item Challenges
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\ben
+	
+	\item Due to a certain degree of redundant actions and for efficient organization of this tutorial, we have laid out the delivery of content as depicted above. That is, we will demonstrate configuring a single web browser before moving onto another one, instead of handling two browsers at once and increasing the confusion.
+	
+	
+	\item At first, we will have a thorough understanding of configuring Google Chrome. Since Google Chrome is based on Project Chromium, this configuration process can be applied for all Chromium based browsers. In addition to native configuration, we will also see how to enhance privacy and security in Google Chrome using add-ons: Ghostery and Adblock Plus.
+	
+
+	\item Second, we will learn through an add-on in Firefox called Lightbeam, how websites are filled with trackers and how dangerous the tracking entities can be if used by exploiting attackers. Then we will walk-through how to configure security and privacy using native settings as well as with add-ons such as NoScript, Ghostery, and Cookie Manager+.
+	
+
+	\item Third, we will have a look at security and privacy enhancing configurations for Internet Explorer and Microsoft Edge. Since both of these browsers share the same set of nomenclature, we figured it would be easier to configure them one after the other in a succession. Windows 10 oddly enough, has both Internet Explorer 11 and Microsoft Edge.
+	
+	\een
+	
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	\pagebreak
+	\begin{slide}{Questions 1,2}{\hyperref[slide 7]{\textless}\hyperref[slide 9]{\textgreater}}
+		\vskip 5pt
+		\begin{instructionblock}
+			\ben
+ 			\item What is the name of web engine used by Internet Explorer?
+			\item What type of attack technique can be used to exploit a web browser feature to access private data over HTTPS connection? 
+			\een
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+
+	\noindent
+	\textbf{Answer to Q1:} Trident
+	
+	\vspace{6mm}
+	\noindent
+	\textbf{Answer to Q2:} Cookie Injection
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	\pagebreak
+	\begin{slide}{Background: Web Browser Add-Ons}{\hyperref[slide 8]{\textless}\hyperref[slide 10]{\textgreater}}
+		\vskip 5pt
+		\begin{instructionblock}
+			\begin{itemize}
+				\item {There are thousands of add-on modules for most of the web browsers these days.}
+				\item While add-ons provide additional functionality and features, they also pose a risk.
+				\item There is a significant trade-off between what we gain and what we compromise for the additional functionality of add-ons
+				\item There are some add-ons which are relatively a lot more malicious than others.
+			\end{itemize}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\noindent
+	\textbf{Trade offs for Add-Ons:}\\
+	In this tutorial, we will be using some add-ons or extensions for default web browsers. However, there are some trade-offs while using web browser add-ons or extensions. They are:
+	
+	\noindent
+	\textbf{Pros:}
+	\begin{itemize}
+		\item[+] Increased flexibility.
+		\item[+] Enhanced functionality.
+		\item[+] More customization.
+	\end{itemize}
+	
+	\noindent
+	\textbf{Cons:}
+	\begin{itemize}
+		\item[--] Trust Assumption. We have to assume the creators of add-ons are not of malicious intent.
+		\item[--] Third-party factoring issues. Add-on/extension creators are third party and might not always comply with respective browser policies or software development philosophy.
+		\item[--] Increases avenue for vulnerability. Add-ons are usually not as quick in being updated as web browsers, leading to vulnerabilities which are patched in browser but are existent in add-ons.
+	\end{itemize}
+	
+	\vspace{2mm}
+	\noindent
+	\textbf{Bottom line}: All the add-ons, which will be used in this tutorial are trusted by open-source community and are not known to cause any specific vulnerability. However, Adblock Plus has been stated to consume heavy CPU resources and it is also rumored to have allowed ads by organizations who pay Adblock Plus for their ads to be white-listed\cite{Adblock}\cite{ABP}. A better alternative seems to be \href{https://addons.mozilla.org/en-us/firefox/addon/ublock-origin/}{\textbf{\underline{uBlock Origin}}}\cite{Blocking}. 
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	\pagebreak
+	\begin{slide}{Activity: Configuring Google Chrome - I}{\hyperref[slide 9]{\textless}\hyperref[slide 11]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Cookie Management
+				\item JavaScript, Images and Content Settings
+				\item Search Engines, Credentials and Certificates
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\vspace{2mm}
+	\noindent
+	\begin{enumerate}
+	\item	\textbf{Cookie Management}:
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item { Click on \texttt{Customize and Control Google Chrome} (the three horizontal bars in the upper right corner of the browser) and select \texttt{Settings}. 
+		\item Click on \texttt{Show Advanced Settings} hyper-link. Click on \texttt{Content Settings} button. 
+		\item Tick the \texttt{Block Sites from Setting Any Data} check-box; Also tick \texttt{Block third-party cookies and site data}. 
+		\item Make sure to delete all unwanted exceptions present under \texttt{Manage Exceptions} and to remove all unwanted cookies in \texttt{All cookies and site data}. 
+		\item A better way of managing cookies is through add-on ``\href{https://chrome.google.com/webstore/detail/cookies/iphcomljdfghbkdcfndaijbokpgddeno?hl=en}{\textbf{\underline{Cookies}}}". This add-on makes it easier to encrypt cookie data and/or to edit existing cookies. }
+	\end{enumerate}
+	
+	
+	\vspace{2mm}
+	\noindent
+	\item	\textbf{Javascript, Images and Content Settings}:
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item In dealing with Javascript and images, we recommend using the policy of ``white-listing" instead of blacklisting.
+		\item { Click on \texttt{Customize and Control Google Chrome} and select \texttt{Settings}.}
+		\item Click on \texttt{Show Advanced Settings} hyper-link. Click on \texttt{Content Settings} button. 
+		\item Go ahead and choose \texttt{Do not show any images} and \texttt{Do not allow any site to run JavaScript}.
+		\item As per need, one can go on adding exceptions by clicking on \texttt{Manage Exceptions} button and adding the domains to list. This is an effective policy in combating against phishing, the attack where an unwanted and a mostly malicious link is scripted into seemingly harmless link placed in a seemingly legitimate context. 
+		\item In \texttt{Content Settings}, scroll down to \texttt{Handlers} and select \texttt{Do not allow any site to handle protocols}. Coming to \texttt{Plugins}, select \texttt{Let me choose when to run plugin content}. 
+		\item Scroll down to \texttt{Location} and select the \texttt{Do not allow any site to track your physical location} radio option. 
+		\item Scroll down to \texttt{Microphone} feature and select \texttt{Do not allow sites to access your microphone}. When you select that, you will be presented with an option to change Adobe Flash microphone settings as well. Do it by clicking on \texttt{Change} hyper-link [requires Internet access]. 
+		\item Similarly, scroll down to \texttt{Camera} feature and select \texttt{Do not allow sites to access your camera}. When you select that, you will be presented with an option to change Adobe Flash camera settings as well. Do it by clicking on \texttt{Change} hyper-link [requires Internet access]. 
+	\end{enumerate}
+	
+	\vspace{2mm}
+	\noindent
+	\item	\textbf{Search Engines, Credentials and Certificates}:
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item { Click on \texttt{Customize and Control Google Chrome} and select \texttt{Settings}.}
+		\item Under \texttt{Search} feature, click on \texttt{Manage search engines}. In here, delete every existing and unnecessary search engines. 
+		\item Add ``\href{https://startpage.com/eng/download-startpage-plugin.html} {\textbf{\underline{Startpage}}}" and/or ``\href{https://chrome.google.com/webstore/detail/duckduckgo-for-chrome/bpphkkgodbfncbcpgopijlfakfgmclao?hl=en} {\textbf{\underline{DuckDuckGo}}}" search engines.
+		\item Under \texttt{Passwords and Forms} feature, un-tick \texttt{Enable Autofill to fill out web forms in a single click} and also un-tick \texttt{Offer to save your web passwords} 
+		\item Under \texttt{HTTPS/SSL} feature, click on \texttt{Manage Certificates}. Click on \texttt{Advanced}. In the subsequent dialogue box, tick everything.
+	\end{enumerate}
+	\end{enumerate}
+	
+	
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	\pagebreak
+	\begin{slide}{Activity: Configuring Google Chrome - II}{\hyperref[slide 10]{\textless}\hyperref[slide 12]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Ghostery 
+				\item Adblock Plus
+				\item Intro to Configuration File editing
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\vspace{2mm}
+	\noindent
+	\begin{enumerate}
+	\item	\href{https://chrome.google.com/webstore/detail/ghostery/mlomiejdfkolichcflejclcbmpeaniij?hl=en}{\textbf{\underline{Ghostery}}}:\\
+	Ghostery provides information to users, helping them make informed decisions about allowing trackers to collect personal footprints, from the sites visited by users. Ghostery also provides users with controls, which can block unrequited trackers subsequently, increasing page load times and enhancing user privacy. 
+	
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item Click on the \textbf{Ghostery} side-heading above to be redirected towards official distribution of Ghostery add-on for Google Chrome.
+		\item Click on \texttt{Add to Chrome} in the subsequent dialogue box.
+		\item You will be redirected to Ghostery configuration page. Here, click \texttt{Next}.
+		\item In the ensuing screen, select \texttt{No Thanks}.
+		\item Click \texttt{Next} in the \texttt{Notification} section.
+		\item In the \texttt{Blocking} section, click on \texttt{Select all} hyper-link. Click \texttt{Next} and configuring Ghostery is done.
+	\end{enumerate} 
+	
+	\vspace{2mm}
+	\noindent
+	\item	\href{https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb?hl=en-US}{\textbf{\underline{Adblock Plus}}}:\\
+	Adblock Plus is a one-stop filter for blocking JUST the annoying ads and not breaking sites completely.
+	
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item Click on the \textbf{Adblock Plus} side-heading above to be redirected towards official distribution of Adblock Plus add-on for Google Chrome.
+		\item Click on \texttt{Add to Chrome} in the subsequent dialogue box. Click on the \texttt{Add extension} button to confirm.
+		\item You will be redirected to Adblock Plus configuration page.
+		\item In this page, scroll down to find a section titled \texttt{Adblock Plus can do more than block ads}.
+		\item Under that section, turn on all three options of \texttt{Malware Blocking}, \texttt{Remove Social Media Buttons}, and \texttt{Disable Tracking}. Feel free to close the tab.
+		\item Click on ABP octagon on the right top corner of the browser. In the drop-down box, select \texttt{Options}.
+		\item In the options page, under \texttt{Filter lists}, tick every default list and click on \textit{Update now}. Also, un-tick \texttt{Allow some non-intrusive advertising}.
+	\end{enumerate} 
+	
+	\vspace{2mm}
+	\noindent
+	\item 	\textbf{Intro to Configuration File editing}:\\
+	All of the above-mentioned settings and even further advanced customization of configurations can be done through editing \texttt{Preferences} file of Google Chrome, which can be found in \texttt{default} folder of user data under \texttt{Google Chrome} in \texttt{AppData}'s \texttt{Local folder}. The language used by Google Chrome's setting is very verbose and not easily understandable by humans. As such, it is strongly suggested to not make any modifications in it unless ABSOLUTELY necessary, to avoid troubles. 
+
+	
+	\vspace{2mm}
+	\noindent
+	As an example, we can disable cookies by adding string phrase: \texttt{"default\_content\_sett\\ing\_values":{"cookies":2},} after the partial string \texttt{"created\_by\_version":"48.0.2\\564.97",} (or whatever version number is current). Location is critical to Google Chrome's file configuration functionality, it will not work if you place the string wherever you want in the file, unlike Firefox.
+	
+	\end{enumerate}
+	
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+	
+	\pagebreak
+	\begin{slide}{Activity: Configuring Mozilla Firefox - I}{\hyperref[slide 11]{\textless}\hyperref[slide 13]{\textgreater}}
+		\vskip 5pt
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Lightbeam Demonstration
+				\item Search Engines, Content Settings, and General Security
+				\item Privacy and Cookies
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\noindent
+	\begin{enumerate}
+	
+	\item	\href{https://addons.mozilla.org/en-US/firefox/addon/lightbeam/}{\textbf{\underline{Lightbeam Demonstration}}}:\\
+	Lightbeam enables users to see the second-party (destination sites) and third-party (unwanted sites) websites with whom, the first-party (users) interact. As the users browse, Lightbeam records every interaction and footprint tracking attempt. These records are then visualized in the form of interactions using a mind-map type of graph. The visualization data is temporarily stored in user's storage and the user has the option to permanently save the data. To test a case:
+	
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item Click on the \textbf{Lightbeam} side-heading above to be redirected towards official distribution of Lightbeam add-on for Mozilla Firefox.
+		\item In the page, click on \texttt{Add to Firefox} button. Click on the \texttt{Install} button to confirm.
+		\item Click on the diamond-shaped Lightbeam icon in the top right corner of browser.
+		\item This is the visualization display page and main dashboard of Lightbeam add-on. 
+		\item To start visualization, let's open new tabs and visit some sites. For example: New York Times, MSN, Yahoo, Amazon, Weather Underground, and Facebook. On every site, scroll down a bit to load the pages properly.
+		\item Observe the number of sites \texttt{You Have Visited} and third-party sites which \texttt{You Have Connected With}.
+	\end{enumerate}
+
+	
+	
+	\vspace{2mm}
+	\noindent
+	\item	\textbf{Search Engines, Content Settings, and General Security}:
+	
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item Click on the \texttt{Open menu} button in the top-right corner of browser.
+		\item In the drop-down pane, click on \texttt{Options} button. 
+		\item In the left navigation pane, click on \texttt{Search} option.
+		\item Under the \texttt{One-click search engines} section, remove all unnecessary search engines. You can add \href{https://addons.mozilla.org/en-us/firefox/addon/startpage-https-privacy-search/}{\textbf{\underline{Startpage}}} as a search engine if privacy is your concern.
+		\item In the left navigation pane, click on \texttt{Content} option. Here, make sure there are no exceptions under pop-up blocking by clicking on \texttt{Exceptions...} button under \texttt{Pop-ups} subsection.
+		\item In the left navigation pane, click on \texttt{Security} option. Here, make sure there are no exceptions under add-ons installation warning by clicking on \texttt{Exceptions...} button beside \texttt{Warn me when sites try to install add-ons} check box (which should be checked). In the same page, under \texttt{Logins} subsection, un-tick both check-boxes.
+		\item In the left navigation pane, click on \texttt{Advanced} option, click on \texttt{Data Choices} tab. Here, it is usually safest to un-tick both \textit{Enable Firefox Health Report} and \textit{Enable Crash Reporter}. Under \texttt{Certificates} tab, select the \texttt{Ask me every time} radio button for personal certificate requests.
+	\end{enumerate}
+	
+	
+	\vspace{2mm}
+	\noindent
+	\item	\textbf{Privacy and Cookies}:
+	
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item Click on the \texttt{Open menu} button in the top-right corner of browser.
+		\item In the drop-down pane, click on \texttt{Options} button. 
+		\item In the left navigation pane, click on \texttt{Privacy} settings.
+		\item Under \texttt{History} subsection, select the option \texttt{Use custom settings for history}, from the drop-down list of \texttt{Firefox will:} and un-tick \texttt{Remember search and form history}. \texttt{Accept third-party cookies} should be set to \texttt{Never} and \texttt{Keep until} should be \texttt{I close Firefox} from their respective drop-down lists.
+		
+	\end{enumerate}
+	\end{enumerate}
+	
+	A better way to manage unrequested cookies is to either use native Firefox cookie manager, which is time consuming to access (and which does not have any advanced features of cookie management) or \href{https://addons.mozilla.org/en-US/firefox/addon/cookies-manager-plus/}{\textbf{\underline{Cookie Manager+}}}. This add-on is a highly advanced cookie manager, which can import, export, modify, inject and remove cookies. 
+
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+
+	\pagebreak
+	\begin{slide}{Questions 3,4}{\hyperref[slide 12]{\textless}\hyperref[slide 14]{\textgreater}}
+		\vskip 5pt
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item What is the most feasible method to increase browser security in an Organization?\\
+				A. Uninstall Internet Explorer.\\
+				B. Disable JavaScripts.\\
+				C. Create safe-browsing-configuration awareness in people.\\
+				D. Disconnect Organization's computers from networks.
+				
+				\item What is an effective browser security policy in combating ``phishing"?
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+
+
+	\textbf{Answer to Q3:} Option C - Create safe-browsing-configuration awareness in people.
+	
+	\vspace{4mm}
+	\textbf{Answer to Q4:} Educating people and spreading awareness about phishing and white-listing any scripting functionality. 
+
+
+
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+	
+	
+	\pagebreak
+	\begin{slide}{Activity: Configuring Mozilla Firefox - II}{\hyperref[slide 13]{\textless}\hyperref[slide 15]{\textgreater}}
+		\vskip 5pt
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item NoScript
+				\item Ghostery
+				\item Intro to ``about:config"
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\vspace{2mm}
+	\noindent
+	Firefox does not have a native method of whitelisting or blacklisting JavaScripts through GUI. It can be done through NoScript extension.
+	
+	
+	\noindent
+	\begin{enumerate}
+	
+	\item	\href{https://addons.mozilla.org/en-US/firefox/addon/noscript/}{\textbf{\underline{NoScript}}}:\\
+	
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item Click on the \textbf{NoScript} side-heading above to be redirected towards official distribution of NoScript add-on for Mozilla Firefox.
+		\item In the page, click on \texttt{Add to Firefox} button. Click on the \texttt{Install} button to confirm.
+		\item Hover your mouse over the \texttt{S} NoScript icon. In the drop-down list, click on \texttt{Options}.
+		\item Under the \texttt{General} tab of \texttt{Options}, check the \texttt{Reload the current tab only} check box.  
+		\item Under the \texttt{Embeddings} tab of \texttt{Options}, check all the check-boxes under \texttt{Additional restrictions for untrusted sites} subsection.
+		\item Under the \texttt{Appearance} tab of \texttt{Options}, check all the check-boxes except \texttt{Status bar label}, \texttt{Full Domains}, and \texttt{Full Addresses} check-boxes.
+		\item Under the \texttt{Advanced} tab of \texttt{Options}, there are six sub-tabs. Under \texttt{Untrusted} tab, check everything except \texttt{Hide <NOSCRIPT> elements} option. Under \texttt{Trusted} sub-tab un-check \texttt{Show the <NOSCRIPT> element...} option. 
+		\item These settings can be exported and imported through respective buttons in \texttt{Options} window. No need to memorize all of these settings.	
+	\end{enumerate}
+	
+	\noindent
+	If NoScript seems overkill or unmanageable, there is always \href{https://addons.mozilla.org/en-US/firefox/addon/adblock-plus/}{\textbf{\underline{Adblock Plus}}}(link embedded into the word), for providing basic safety against scripts. Adblock Plus fulfills its functionality as it does for Google Chrome {\hyperref[slide 8]{\texttt{\^}}} (please click on \texttt{\^} symbol to go to the respective section). 
+	
+	\vspace{2mm}
+	\noindent
+	\item	\href{https://addons.mozilla.org/en-US/firefox/addon/ghostery/}{\textbf{\underline{Ghostery}}}
+	
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item Click on the \textbf{Ghostery} side-heading above to be redirected towards official distribution of Ghostery add-on for Mozilla Firefox.
+		\item In the page, click on \texttt{Add to Firefox} button. Click on the \texttt{Install} button to confirm.
+		\item Ghostery satisfies and fulfills its functionality as it does for Google Chrome {\hyperref[slide 8]{\texttt{\^}}}(please click on \texttt{\^} symbol to go to the respective section). Firefox version of Ghostery can in addition, even block third-party cookies.
+	\end{enumerate}
+	
+	
+	
+	\vspace{2mm}
+	\noindent
+	\item \href{about:config}{\textbf{Intro to ``\underline{about:config}"}}:
+	Using this method, we can alter advanced web browser settings, which would negatively impact web browser stability if improperly handled. As such, it is preferable to not use this method unless either it is necessary or user is in a sandbox environment. This configuration terminal can be accessed through typing \texttt{about:config} in the address location bar.
+	
+	\vspace{2mm}
+	In here, we can modify configurations by changing either integer values or boolean flags. For example, to keep cookies until Firefox is closed, we can search for cookie in the search bar, find \texttt{network.cookie.lifetimePolicy} setting and set the value to 2. This change can be noted in GUI immediately after it is set, because the setting changes display to bold whenever changed from default value. 
+	
+	\vspace{2mm}
+	A further advanced alternative method is to browse for ``prefs.js" file. The file can be located under \texttt{C -> Users -> <UserName> -> AppData -> Roaming -> Mozilla -> Firefox -> Profiles -> <random eight characters \\string>.default}. Append ``\texttt{user\_pref("network.cookie.lifetimePolicy", 2);}" to the Prefs file. This action does exactly the same thing as changing the value of setting to 2 in ``about:config", but in a more non-GUI kind of style.
+	\end{enumerate}
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+	
+	\pagebreak
+	\begin{slide}{Activity: Configuring Microsoft Browsers}{\hyperref[slide 14]{\textless}\hyperref[slide 16]{\textgreater}}
+		\begin{instructionblock}
+			\ben 
+			\item Internet Explorer {\small{(Yes, Windows 10 still has Internet Explorer 11 installed in it, by default.)}} 
+			\item Microsoft Edge
+			\een
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	\vspace{4mm}
+	\noindent
+	\begin{enumerate}
+	\item	{\large{\textbf{INTERNET EXPLORER (IE):}}}
+	
+	\begin{enumerate}
+		\item \textbf{Managing Browsing History:}\\ We can delete the Browsing History by pressing \texttt{Ctrl+Shift+Del} or by going to \texttt{Tools-$>$Safety-$>$Delete Browsing History}. \texttt{Tools} is a gear-shaped icon at the top-right of web browser. For better privacy, select all the options and click on \texttt{Delete} button.
+		
+		\item \textbf{InPrivate Mode:}\\ Browsing in InPrivate does not store any data about the browsing session in the computer (example: temporary internet files, cookies and browsing history). We can browse in InPrivate session by pressing \texttt{Ctrl+Shift+P}, or going to\\ \texttt{Tools-$>$Safety-$>$InPrivate Browsing}, or right click the Internet Explorer icon anywhere and click on \texttt{Start InPrivate Browsing} option.
+		
+		\item \textbf{Turn Off Do Not Track Request:}\\ To turn on or off \texttt{Do Not Track requests}, go to \texttt{Tools-$>$Safety-$>$Turn On Do not track request}. If that action is checked, web browser has turned on do not track requests. If the action is not checked, web browser has turned off no-tracking requests.
+		
+		\item \textbf{ActiveX Filtering:} To turn on or off ActiveX Filtering Request, go to\\ \texttt{Tools-$>$Safety-$>$ActiveX Filtering.}
+		
+		
+		\item \textbf{Privacy Report:}\\ To get details about a webpage privacy, go to \texttt{Tools-$>$Safety-$>$Webpage privacy report}. This particular list gives us information regarding what sites' cookies are accepted and which ones are not (if a site is not mentioned as accepted, then cookies are not allowed on that site). 
+		
+		\item \textbf{Check This Website:}\\ IE provides a feature called \texttt{Check this website}, which when clicked, reports about phishing and malware content in the current website. This feature can be accessed by going to and click on: \texttt{Tools->Safety->Check this website}.
+		
+		\item \textbf{SmartScreen:}\\ Check this website, uses SmartScreen filtering to find the malicious content. To turn off smart screen filtering, to go \texttt{Tools-$>$Safety-$>$Turn Off SmartScreen Filter}. To turn it back on, just click on the same thing and it will be turned on.
+		
+		\item \textbf{Report Unsafe Website:}\\ To report an unsafe website, go to \texttt{Tools-$>$Safety-$>$Report Unsafe Website}. This feature is useful towards alerting other users of IE about malicious or unwanted content on any page in which this feature is invoked.
+		
+		\item \textbf{Location Settings:}\\ It is highly suggested to turn off zeroing of user's location, unless and until necessary. To turn off the location setting, go to \texttt{Tools-$>$Internet Options-$>$ Privacy} tab, and in here, check on \texttt{Never allow websites to request your physical location}. Sometimes, this option maybe grayed out. If so, location services are anyway disabled from control panel.
+		
+		\item \textbf{Pop-up Blocking:}\\ To turn on pop-up blocker, go to \texttt{Tools-$>$Internet Options-$>$Privacy}, and check on \texttt{Turn on Pop-up Blocker}. Next, click on \texttt{Settings}. Make sure there are no allowed sites, unless you explicitly allowed a site to throw out pop-ups. Also, at the bottom of this dialogue box, it is suggested to change \texttt{Blocking level} to \texttt{High: Block all pop-ups (Ctrl+Alt to override)}.
+		
+		\item \textbf{Managing Sites and Cookies:}\\ To manage cookies with respect to sites, go to \texttt{Tools-$>$Internet Options-$>$Privacy}, and click on \texttt{Sites} for managing exceptions per site. Click on \texttt{Advanced} for \texttt{First-party Cookies} and \texttt{Third-party Cookies}. It is advised to always use \texttt{Prompt} and \texttt{Block} values respectively for first and third party cookies.
+		
+		\item \textbf{Managing Scripting:}\\ To manage Scripting, go to \texttt{Tools-$>$Internet Options-$>$Security}. In here, click on \texttt{Custom Level} button. In the resultant box, scroll to \texttt{Scripting} section and choose either \texttt{Disable} or \texttt{Prompt} radio button for different kinds of scripting.
+	\end{enumerate}
+	
+	\vspace{13mm}
+	\noindent
+	\item	{\large{\textbf{MICROSOFT EDGE:}}}
+	
+	\begin{enumerate}
+		\item \textbf{Browsing history:} To clear web browser's stored data like cache and etc., go to More actions-$>$Settings (More actions button can be found on top-right corner of the web browser) and in the resultant pane, click on \texttt{Choose what to clear} under \texttt{Clear browsing data} subcategory. Check all desired/necessary check-boxes and click on \texttt{Clear} button.
+		
+		\item \textbf{InPrivate Browsing:} To browse without allowing browser to store any data after it is closed, use InPrivate browsing. To do that, click on \texttt{More actions} and select \texttt{New InPrivate window}. Beware, as Microsoft Edge was found to be storing private data even while browsing in InPrivate mode.\cite{edgenews} 
+		
+		\item \textbf{Turn on do not track request:} Navigate to \texttt{More actions-$>$Settings} and in this pane, click on \texttt{View advanced settings} scroll to find \texttt{Send Do Not Track requests} from \texttt{Privacy and services} subcategory.
+	\end{enumerate} 
+	\end{enumerate}
+	
+	\vspace{2mm}
+	\noindent
+	{\textbf{Bottom Line:}}
+	\begin{itemize}
+		\item Many ``Advanced Settings" of Microsoft Edge, like disabling JavaScript, needs to be done through Active Directory and Administrative Templates, which is not convenient for non-CS/IT people.
+		\item Internet Explorer had a great extent of flexibility in changing settings through GUI, Microsoft Edge does not have that extent of flexibility.
+		\item Microsoft Browsers are becoming, heavily non-configuration friendly in terms of customization and custom configuration, as development goes on.
+		\item Many safety settings are dependent on sending back data to Microsoft, which is known to have helped PRISM program along with Google and several major software companies \cite{PRISM}.
+	\end{itemize}
+	\textbf{Interesting to know}: PRISM is a secret surveillance programme carried out by NSA [National Security Agency] of United States. Through PRISM, NSA snooped on data [including e-mails, photos, documents, etc.,] of citizens and politicians in many countries. Mozilla Foundation is not known to have helped NSA with its' PRISM program.
+	
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+	\pagebreak
+	\begin{slide}{Questions 5,6}{\hyperref[slide 15]{\textless}\hyperref[slide 17]{\textgreater}}
+		\begin{instructionblock}
+			\ben
+				\item[Q5.] How can we effectively disable JavaScript in Microsoft Edge?\\
+				A. Ask Cortana to do it.\\
+				B. Not possible natively, use Administrative Templates.\\
+				C. Install an extension/add-on for it.\\
+				D. None of the above.\\
+				
+				\item[Q6.] Can Mozilla Firefox natively White-list or blacklist JavaScripting?
+				
+%				\item[Q7.] What was PRISM programme used for?\\
+%				A. Disable scope vectors of common XSS attacks.\\
+%				B. Decrease chances of SQL and cookie injection attacks against web browsers.\\
+%				C. Execute an EAR attack on Web Browsers worldwide.\\
+%				D. Spy on people across various countries.\\
+			\een
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	\noindent
+	\textbf{Answer to Q5:} Option B - Not natively possible, use Administrative Templates.
+	
+	\vspace{4mm}
+	\noindent
+	\textbf{Answer to Q6:} Mozilla Firefox cannot natively whitelist or blacklist JavaScripting.
+
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+	
+	
+	
+	\pagebreak
+	\begin{slide}{Challenge I: JavaScript White-listing}{\hyperref[slide 16]{\textless}\hyperref[slide 18]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Through GUI of Google Chrome, using one rule per domain, white-list the following websites, after disabling JavaScript globally(\textbf{*})(Easy Challenge). 
+			\end{enumerate}
+			Websites:	
+			\ben
+			\item University of Idaho
+			\item Google Mail
+			\item Wikipedia
+			\item Outlook
+			\een
+		\end{instructionblock}
+	\end{slide}
+	%\vfill
+	
+	\vspace{4mm}
+	\noindent
+	\textbf{*} Not just creating the rule, but make sites work without breaking any necessary feature.
+	
+	\vspace{4mm}
+	\noindent
+	\textbf{Hint:} To make the sites really work without breaking anything, global white-listing of entire site domains is the efficient option.	
+	
+	
+	%\vspace{2mm}
+	%\noindent
+	%\textbf{HINT:} The parameter \texttt{("capability.policy.maonoscript.sites", "noscript.net http://noscript.net https://noscript.net");} might white-list NoScript website.
+	
+%	\vspace{2mm}
+%	\noindent
+%	\textbf{Remember:} There is no ``\textit{wrong}" step in RADICL environment. Break what you can, without any worry. Focus is to apply knowledge gained, not to finish the challenge without any errors.
+
+	
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	\pagebreak
+	\begin{slide}{Challenge II: Config File Study}{\hyperref[slide 17]{\textless}\hyperref[slide 19]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item White-list websites from Challenge I in NoScript GUI. Study the configuration code in ``pres.js" file. 
+				\item Observe how the config file documents the white-listed sites (\textbf{*})(Medium Challenge). 
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{4mm}
+	\noindent
+	\textbf{*} The purpose of this challenge is to learn a crucial skill required to tackle next two challenges.
+	
+	\vspace{4mm}
+	\noindent
+	\textbf{Hint:} If you have cleared Challenge I, you should be able to easily perform the 1st task of this challenge. For the second task, seeing the difference of ``prefs.js" file before and after the modifications to NoScript GUI will be beneficial.	
+
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	
+	\pagebreak
+	\begin{slide}{Challenge III: Config. File Editing}{\hyperref[slide 18]{\textless}\hyperref[slide 20]{\textgreater}}
+		\begin{instructionblock}
+			\begin{itemize}
+				\item For Firefox, using configuration file editing method, do the following:
+				\begin{enumerate}
+					\item Disable cookies completely and disable JavaScript globally in native Firefox.
+					\item Add a command enabling JavaScript globally, while not removing the disable command from the configuration file. Swap the order of command placement. Report what behaviour you can observe.
+				\end{enumerate}
+			\end{itemize}
+			(Hard Challenge).
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{2mm}
+	\noindent
+	\textbf{Hint:} Apply mapping skill learned in previous challenge
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+	
+	
+	
+	\pagebreak
+	\begin{slide}{Challenge IV: Config. File Editing}{\hyperref[slide 19]{\textless}\hyperref[slide 21]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Using one rule per domain, White-list following websites in Google Chrome (after disabling JavaScript globally) using Preferences file editing, not the GUI of browser (\textbf{*}).
+			\end{enumerate}
+			Websites:
+			\begin{enumerate}
+				\item Facebook 
+				\item LinkedIn 
+				\item Schweitzer Engineering Laboratory
+				\item Youtube
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\vspace{2mm}
+	\noindent
+	\textbf{*} Not just creating the rule, but make sites work without breaking any necessary feature.
+	
+	\vspace{2mm}
+	\noindent
+	\textbf{Hint:} If the previous challenges were completed, the final challenge is an extension of skills learned during all previous challenges.
+	
+
+	
+	 
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+	
+	\pagebreak
+	\begin{slide}{Conclusion}{\hyperref[slide 20]{\textless}\hyperref[slide 22]{\textgreater}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item Secure configuration of browsers is important.
+				\item Most widely exploited features of a Web Browser include scripting, cookies, and ease of use.
+				\item We have learned how to configure four web browsers [Google Chrome, Mozilla Firefox, Internet Explorer, and Microsoft Edge] for fundamental security.
+				\item Configuring browsers in a technologically diverse enterprise is not very easy with existing group policy tools.
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	\vfill
+	
+	
+	
+	\vspace{2mm}
+	\begin{enumerate}
+		
+		\item	In the background section of this tutorial, we have seen how secure configuration of web browsers can prove useful against mitigating common attacks like XSS, CSRF, and EAR. Secure configuration of web browsers is also important, not just because the privacy and security of users is at risk, but also because enterprises are at an even greater risk, as the large-scale financial repercussions are higher than individual users.
+		
+		\item	Secondly, we have also seen how difficult it can get for an administrator to deploy configurations across a large-scale enterprises' systems. Currently, there are no group-configuration tools which can run across multiple operating systems and with different web browser applications. As such, we have started an endeavour to solve the problem through designing a framework which can be used to specify security policies and these policies will be automatically transformed into configurations, irrespective of operating system and web browser application.
+		
+		
+		\item	To conclude, this tutorial provides a fundamental knowledge of configuring Google Chrome, Mozilla Firefox, Internet Explorer, and Microsoft Edge. However, this tutorial will not and does not claim to make the browsers invincible against all forms of attacks. 
+		
+		\item There are many forms of advanced attacks which can compromise any web browser, irrelevant of the configurations being used. As such, it is always better to be safe than sorry, because nothing can ever be too-secure, but anything can be too vulnerable.
+	\end{enumerate}
+	
+	
+	
+	
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+
+
+
+
+	\pagebreak	
+	\begin{slide}{Appendix: Solutions and Change-log}{\hyperref[slide 21]{\textless}}
+		\begin{instructionblock}
+			\begin{enumerate}
+				\item {Solutions to the challenges}
+					\ben
+						\item Challenge I
+						\item Challenge II
+						\item Challenge III
+						\item Challenge IV
+					\een
+				\item {Tutorial-Related Resources}
+				\item {Change-Log}
+			\end{enumerate}
+		\end{instructionblock}
+	\end{slide}
+	
+	\ben
+	
+	\item \textbf{Solutions to the Challenges:}	
+	
+	\ben
+	
+	\vspace{4mm}
+	\item \textbf{Challenge I:}
+	\begin{enumerate}
+		\item Open Google Chrome.
+		\item { Click on \texttt{Customize and Control Google Chrome} and select \texttt{Settings}}.
+		\item Click on \texttt{Show Advanced Settings} hyper-link. Click on \texttt{Content Settings} button.
+		\item In the \texttt{Content Settings} dialogue box, under \texttt{JavaScript} subsection, click on \texttt{Do not allow any site to run JavaScript} radio button. 
+		\item Next, click on \texttt{Manage Exceptions...} and type in [*.]uidaho.edu, setting the Behavior to \texttt{Allow} for allowing University of Idaho's web-pages run JavaScripts.
+		\item Similarly, use [*.]gmail.com, [*.]wikipedia.org, and [*.]live.com for allowing execution of JavaScripts in Google Mail, Wikipedia, and Outlook respectively. 
+	\end{enumerate} 
+			
+	\vspace{4mm}
+	\item \textbf{Challenge II:}
+	\begin{enumerate}
+		\item Open Mozilla Firefox.
+		\item { Click on \texttt{S} icon of NoScript in the top-right corner of the page and select \texttt{Options}}.
+		\item In the resultant pop-up box, click on \texttt{Whitelist} tab.
+		\item Under the \texttt{Address of web site:} subsection, there is  an entry bar. Using it, specify the website domains in a format as given in the previous challenge's solution.
+		\item Notice the changes to \texttt{prefs.js} file found at: \texttt{C:$\backslash$Users$\backslash$<username>\\$\backslash$AppData$\backslash$Roaming$\backslash$Mozilla$\backslash$Firefox$\backslash$Profiles$\backslash$<randomstring>\\.default$\backslash$prefs.js}. Here, audience learn the configuration code to GUI command mapping skill, crucial for next challenges. 
+	\end{enumerate} 
+
+	\vspace{4mm}
+	\item \textbf{Challenge III:}\\
+	Navigate to and open the file at:\\ \texttt{C:$\backslash$Users$\backslash$<username>$\backslash$AppData$\backslash$Roaming$\backslash$Mozilla$\backslash$Firefox$\backslash$Profiles\\$\backslash$<randomstring>.default$\backslash$prefs.js}
+	
+	\vspace{2mm}
+	\noindent
+	At the end of this file, append the lines:\\
+	\texttt{user\_pref("network.cookie.cookieBehavior", 2);\\
+	user\_pref("javascript.enabled", false);}\\
+	Save the file
+	
+	\vspace{2mm}
+	\noindent
+	Ordering of configurations' commands plays a significant role in resolving conflicts. First placed configuration command takes priority, that means if two conflictive commands like disabling and enabling javascript are in the same configuration file, the one which is above the other will override the later command. 
+	
+	\vspace{4mm}
+	\item \textbf{Challenge IV:}\\
+	Navigate to and open the files at:\\ \texttt{C:$\backslash$Users$\backslash$<username>$\backslash$AppData$\backslash$Local$\backslash$Google$\backslash$Chrome$\backslash$User Data\\$\backslash$Default$\backslash$Preferences}
+	
+	\vspace{2mm}
+	\noindent
+	Append the following, after string phrase \texttt{"images":\{\},}\\ 
+	{\texttt{"javascript":\{"[*.]facebook.com,*":\{"setting":1\},"[*.]\\linkedin.com,*":\{"setting":1\},"[*.]selinc.com,*":\{"setting":1\},\\"[*.]youtube.com,*":\{"setting":1\}\},}}
+	
+	\een
+	
+	
+	\pagebreak
+	
+	\item \textbf{Tutorial-Related Resources:}
+	\label{SoftwareResourceLocations}
+	
+	A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{CLICK ME}}.
+	
+	Mozilla Firefox - \href{https://www.mozilla.org/en-US/firefox/new/}{\underline{CLICK ME}}
+	
+	Google Chrome - \href{https://www.google.com/chrome/browser/}{\underline{CLICK ME}}
+	
+	Internet Explorer - \href{https://windows.microsoft.com/en-us/internet-explorer/download-ie}{\underline{CLICK ME}}
+	
+	A Windows 10 VM with Microsoft Edge - \href{https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/}{\underline{CLICK ME}}	
+	
+	\vspace{8mm}
+	\item \textbf{Change-Log:}
+	\label{changelog}
+	
+	\vspace{6mm}
+	
+	{
+		\begin{tabular}{ |p{1cm}|p{3cm}|p{3cm}|p{3cm}|  }
+			\hline
+			\multicolumn{4}{|c|}{The Art of Secure Web-Browsing tutorial} \\
+			\hline
+			\texttt{\textbf{Ver.}} & \texttt{\textbf{Date}} & \texttt{\textbf{Authors}} & \texttt{\textbf{Changes}} \\
+			\hline
+			v1 & Feb. 2nd 2016 & Ananth Jillepalli & First draft of tutorial. \\
+			\hline
+			v2 & May  24th 2016 & Ananth Jillepalli & Major content additions and remodeled the structure. \\
+			\hline
+			v2.1 & May 31st 2016 & Ananth Jillepalli & Added appendix and other minor enhancements. \\
+			\hline
+		\end{tabular}
+	}
+	
+	
+	
+	
+	\een
+	
+
+	
+	
+	%\textbf{Thank you for reading through this tutorial. We would love to hear your feedback. Please contact us or provide your feedback at: ajillepalli@uidaho.edu}
+	
+	% bibliography on last page
+	\pagebreak
+	% this style of bibliography shows urls
+	\bibliographystyle{IEEEtran}
+	
+	\begin{thebibliography}{99}
+		
+		\bibitem{stat}
+		
+		StatCounter Global Stats, ``January 2015 to December 2015", last accessed on 29th Jan. 2016, http://gs.statcounter.com/\#browser-ww-monthly-201501-201512.
+		
+		\bibitem{iwsstat}
+		
+		Internet World Stats, ``Internet Usage Statistics, The Big Picture", last accessed on 29th. Jan 2016, http://www.internetworldstats.com/stats.htm.
+		
+		\bibitem{edgenews} 
+		
+		Russell Brandom, ``Microsoft’s Edge Browser maybe Storing Private Browsing Data", last accessed on 29th. Jan 2016, http://www.theverge.com/2016/1/27/10845448/microsoft-edge-inprivate-storing-data-incognito, January 27th 2016.
+		
+		\bibitem{ffnews}
+		
+		Lucian Armasu, ``Firefox Leads Other Browsers With New Tracking Protection For Private Browsing", last accessed 29th Jan. 2016, http://www.tomshardware.com/news/firefox-tracking-protection-private-browsing,30484.html, November 4th 2015.
+		
+		\bibitem{goldnews}
+		
+		Madelyn Bacon, ``Why Web Browser Security is a Goldmine for Attackers", last accessed 29th Jan. 2016, http://searchsecurity.techtarget.com/video/Why-Web-browser-security-is-a-goldmine-for-attackers, September 25th 2015. 
+		
+		\bibitem{cooknews}
+		
+		Juha Saarinen, ``Cookies Can Bypass HTTPS in Web Browsers", last accessed 29th Jan. 2016, http://www.itnews.com.au/news/cookies-can-bypass-https-in-web-browsers-409617, September 25th 2015. 
+		
+		\bibitem{track}
+		
+		Alan Henry, ``Everyone's Trying to Track What You Do on the Web: Here's How to Stop Them", last accessed 30th Jan. 2016, http://lifehacker.com/5887140/everyones-trying-to-track-what-you-do-on-the-web-heres-how-to-stop-them, February 22nd 2014.
+		
+		\bibitem{lightbeam}
+		
+		David Cancel, ``Ghostery", last accessed 31st Jan. 2016, https://www.ghostery.com/, April 2009.
+		
+		\bibitem{https}
+		
+		The Tor Project and Electronic Frontier Foundation, ``HTTPS Everywhere", last accessed 31st Jan. 2016, https://www.eff.org/https-everywhere, June 2010.
+		
+		\bibitem{adblock}
+		
+		Wladimir Palant - Eyeo GmbH, ``Adblock Plus", last accessed 31st Jan. 2016, https://adblockplus.org/, April 2006.
+		
+		\bibitem{lightbeam}
+		
+		Atul Varma, ``Lightbeam for Firefox", last accessed 31st Jan. 2016, https://www.mozilla.org/en-US/lightbeam/, July 2011.
+		
+		\bibitem{noscript}
+		
+		Inform Action -  Open Source Software, ``NoScript Suite", last accessed 31st Jan. 2016, https://noscript.net/, April 2006.
+		
+		\bibitem{cookies}
+		
+		HotCleaner, ``Cookies", last accessed 31th Jan. 2016, https://chrome.google.com/webstore/detail/cookies/iphcomljdfghbkdcfndaijbokpgdden\\o?hl=en, October 8th 2015.
+		
+		\bibitem{cookies+}
+		
+		Vano, ``Cookies Manager+", last accessed 31th Jan. 2016, https://addons.mozilla.org/en-US/firefox/addon/cookies-manager-plus/, October 11th 2010.
+		
+		\bibitem{PRISM}
+		
+		K. Johnson, S. Martin, J. O'Donnell and M. Winter, ``Secret Program that began in 2007 extracts e-mail, audio, video, photos, documents, search history and logs.", last accessed 1st Feb. 2016, www.usatoday.com/story/news/2013/06/06/nsa-surveillance-internet-companies/2398345/, June 06 2013.
+		
+		\bibitem{Adblock}
+		
+		Guardian Media Group, ``Adblocking has an 'unsavoury' business model, says Trinity Mirror chief", last accessed 24th May 2016, http://www.theguardian.com/media/2016/mar/09/adblocking-business-model-trinity-mirror-guardian-media-group, March 09 2016.
+		
+		\bibitem{ABP}
+		
+		Wladimir Palant, ``Allowing acceptable ads in Adblock Plus", last accessed 24th May 2016, https://adblockplus.org/development-builds/allowing-acceptable-ads-in-adblock-plus, December 05 2011.
+		
+		\bibitem{Blocking}
+		
+		Raymond Hill, ``Blocking Modes and Efficiency", last accessed 24th May 2016, https://github.com/gorhill/uBlock/wiki/Blocking-mode, March 16 2016.
+		
+	\end{thebibliography}
+	
+	
+\end{document}
