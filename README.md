@@ -5,3 +5,6 @@ In this repository you will find the complete LaTeX source for hands-on cybersec
 * The Art of Secure Web Browsing 
 * Static Testing: Static Analysis and Code Reviews 
 * Group Policy with Active Directory 
+* Social Engineering
+* Network Scanning with Nmap and Netcat
+* Password Cracking
