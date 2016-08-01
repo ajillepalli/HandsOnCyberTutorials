@@ -7,4 +7,4 @@ In this repository you will find the complete LaTeX source for hands-on cybersec
 * Group Policy with Active Directory 
 * Social Engineering
 * Network Scanning with Nmap and Netcat
-* Password Cracking
+* Password Security
