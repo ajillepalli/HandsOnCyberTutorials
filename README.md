@@ -8,3 +8,6 @@ In this repository you will find the complete LaTeX source for hands-on cybersec
 * Social Engineering
 * Network Scanning with Nmap and Netcat
 * Password Security
+* Firewall Fundamentals
+* Web Application Security
+* WireShark Fundamentals
