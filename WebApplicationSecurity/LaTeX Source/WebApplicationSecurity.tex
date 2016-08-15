@@ -1,0 +1,952 @@
+% declare our document type
+\documentclass[12pt]{extarticle}
+
+%%%%%%%% PACKAGES NEEDED FOR THIS DOCUMENT
+
+% allow us to put pictures in the document
+\usepackage{graphicx}
+% this line lets us use larger fonts
+\usepackage{extsizes}
+% this allows us to create "slides" in the document
+\usepackage[many]{tcolorbox}
+% this line lets us caption images inside the "slides"
+% this is neccesary since the slide doesn't allow the use of
+% \figure{} inside
+\usepackage{caption}
+% allows use of courier font
+\usepackage{courier}
+% make the table of contents links like people are used to
+% the hidelinks parts hides link outlines
+\usepackage[hidelinks]{hyperref}
+% resize the margins
+\usepackage[margin=1in]{geometry}
+% use utf8 encoding
+\usepackage[utf8]{inputenc}
+% one of the other packages complained until I put this here
+\usepackage[english]{babel}
+% allow citations
+\usepackage{cite}
+% code listings
+\usepackage{listings}
+% fix single quote in listings
+\usepackage{textcomp}
+\usepackage{filecontents}
+%\usepackage[noadjust]{cite}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{forest,kantlipsum}
+\usepackage{float}
+\usepackage{etoolbox}
+\usepackage{url}
+\usepackage{breakurl}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[labelfont=bf]{caption}
+
+%%%%%%%%%%% CUSTOM ENVIRONMENT SETUP
+
+% declare a typesetting environment for code/emphasis
+\newcommand{\code}[1]{\texttt{\bfseries#1}}
+\newenvironment{codeblock}{\bfseries\texttt\bgroup}{\egroup\par}
+% better declaration of font environment
+%\DeclareTextFontCommand{\codetext}[1]{\code{#1}}
+% declare a large font environment for use in the "slides"
+\newcommand{\instruction}[1]{\Large{#1}}
+% font environment again
+%\DeclareTextFontCommand{\instruction}{\instructionfont}
+\newenvironment{instructionblock}{\Large\bgroup}{\egroup}
+% declare a "slide" text box for use in the document
+% the slide is a numbered \section{}
+\newtcolorbox[auto counter]{slide}[3][]{%
+colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+title={\addcontentsline{toc}{section}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}\setcounter{section}{\thetcbcounter}}}
+% declare a "subslide" text box for use in the document
+% the subslide is a numbered \subsection{}
+\newtcolorbox[auto counter,number within=section]{subslide}[3][]{%
+colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}}}
+\renewcommand{\labelitemii}{$\circ$}
+\lstset{basicstyle=\ttfamily,keywordstyle=\bfseries\color{blue!80!black},identifierstyle=\bfseries,stringstyle=\color{red},showstringspaces=false,commentstyle=\itshape\color{green!40!black},upquote=true}
+
+% My Environments (keep these)
+\newcommand{\ben}{\begin{enumerate}}
+\newcommand{\een}{\end{enumerate}}
+\newcommand{\bi}{\begin{itemize}}
+\newcommand{\ei}{\end{itemize}}
+
+%%%%%%%%% SET UP OUR TITLE PAGE
+
+\begin{document}
+\title{ Web Application Security\\XSS and CSRF injections and mitigations}
+\author{Ananth Jillepalli \& Risab Manandhar}
+\date{\today \\ \hyperref[changelog]{Version 2.1}}
+\renewcommand{\abstractname}{Summary}
+\begin{titlepage}
+\maketitle
+\pagenumbering{gobble}
+\begin{center}
+\includegraphics[scale=.5]{UofI}
+
+\large{CS 539: Applied Security Concepts}
+
+\vskip 40pt
+
+\end{center}
+\begin{abstract}
+Cross-Site Scripting(XSS) is a script technique to send malicious code in the form of browser side scripts. XSS occurs when input to a web-page from the input fields are not handled properly, causing the web-page to execute a malicious script.
+
+\vspace{4mm}
+\noindent
+Cross-Site Request Forgery (CSRF) on the other hand, is an attack that forces an authenticated end user to execute unwanted actions on a web application. In this tutorial, we will be learning how to exploit the vulnerabilities in web applications using XSS and CSRF as the best ethical hackers do, and then work on the mitigation techniques to mitigate such attacks.
+\end{abstract}
+
+
+\vfill
+\begin{center}
+This work is licensed under a \href{https://creativecommons.org/licenses/by-nc-nd/2.0/}{Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License}.
+\vskip 10pt
+\includegraphics[scale=.5]{cc}
+\end{center}
+
+\end{titlepage}
+
+%%%%%%%%%% TABLE OF CONTENTS
+
+\pagebreak
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%    BEGINNING OF ACTUAL DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+\pagebreak
+\pagenumbering{arabic}
+\setcounter{section}{1}
+\begin{slide}{Objectives of this Tutorial}{\hyperref[slide 2]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+	The goal of this tutorial is to secure web applications in general. Specifically, we focus on:
+		\ben
+			\item Understand what is a XSS-vulnerability and how it is exploited by attackers. 
+			\item Gain some insight on steps to mitigate XSS attacks.
+			\item Understand what is a CSRF vulnerability and how it is exploited by attackers. 
+			\item Gain some insight on steps to mitigate CSRF attacks.
+		\een
+	\end{instructionblock}
+\end{slide}
+\vfill
+
+\noindent
+This tutorial is not a complete user's guide to Web Application Security. In contrast, this tutorial focuses just on the XSS and CSRF attacks and their respective mitigations. In the ensuing tutorial, we will briefly explain, through either activities or challenges, the following specific things about XSS and CSRF attacks:
+
+\ben
+
+\item Understand what causes a Cross-Site Scripting (XSS) vulnerability and observe how the vulnerability is turned into an exploit by attackers.  
+
+
+\item Gain some insight on measures/steps to mitigate the observed XSS vulnerability exploits. However, this tutorial does not claim to make the reader an expert in XSS vulnerability mitigation. This tutorial is intended to be a beginner's guide to enhancing web application security.
+
+
+\item Understand what causes a Cross Site Request Forgery (CSRF) vulnerability and observe how the vulnerability is turned into an exploit by attackers.    
+
+
+\item Gain some insight on measures/steps to mitigate the observed CSRF vulnerability exploits. Same as before, this tutorial does not claim to make the reader an expert in CSRF vulnerability mitigation, but instead, this tutorial will provide reader with a decent understanding on how to avoid common pitfalls that plague many software developers internationally.
+
+\een
+
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+
+
+
+
+\pagebreak	
+\begin{slide}{Required Background}{\hyperref[slide 1]{\textless}\hyperref[slide 3]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		We assume that the reader of this tutorial has an extent of background knowledge in the following areas:
+		\begin{enumerate}
+			\item {Working experience on usage of computers and software applications, like web browsers, and virtualization apps.}
+			\item {Basic overall idea of computer networks and Internet.}
+			\item {Fundamental knowledge on topics like networking mechanisms, web application functioning, etc.,}
+			\item {An overall idea on general issues like website security, data privacy, computer/network security, etc.,}
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent
+Due to restrictions on time and manpower resources, we are not able to make the ensuing tutorial to be completely self-contained from the perspective of a user. As such, the tutorial is best used when the user already has certain background skills and knowledge. The following are some areas where we expect the users of this tutorial to have some previous skills/knowledge:
+
+\ben
+
+
+\item Practical experience on using computers, installing and using common software applications (particularly web browsers, and virtualization software platforms). The tutorial does not explain how to navigate within the operating system's graphical user interface (GUI). Similarly, the tutorial also does not explain how to browse the Internet, how to install software applications, and how to use/navigate software applications. 
+
+\item An overall idea on the working os computer networks and Internet. The tutorial expects a user to understand common computer networking terms and their technical meanings. For example, ``websites", ``scripting", "reference forgery", and etc., 
+
+\item Fundamental or very basic idea on networking mechanisms and web application functioning. The tutorial expects a user to understand technical concepts like OSI model of networks, setting up a web application, navigating a web application database, and querying the database for information, and knowledge of basic network attacks like man-in-the-middle attack etc., are helpful.
+
+\item Also bit of exposure to logic notations and elementary programming skills would be very helpful in understanding the PHP code involved in most of the activities and challenges. An overall brief idea on general computer-related issues like ``website security", ``data privacy", ``computer security", ``network security", ``application permissions", ``network access privileges" and etc., will help a lot.
+
+
+\een 
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+
+
+\pagebreak
+\begin{slide}{Hardware and Software Requirements}{\hyperref[slide 2]{\textless}\hyperref[slide 4]{\textgreater}}
+	%\vskip 10 pt
+	\begin{instructionblock}
+		We recommend having at least the following hardware and software specifications for smooth execution of this tutorial's activities and challenges:
+		\begin{enumerate}
+			\item {A computer which can at least boot 1 virtual machines (VM) smoothly, with no noticeable lag and delay}
+			\item {A functional virtualization software platform. For example, VMWare or VirtualBox.}
+			\item {One vanilla Ubuntu VM (preferably 16.04 LTS) and as an addition, LAMP stack, and \texttt{bWAPP} web application(\textbf{*}).  }
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent
+Since the tutorial deals with a lot of buggy code and code manipulation, it is highly recommended to NOT perform the activities and challenges of this tutorial on your own operating system. Please use a virtualization software, and build a virtual machine which can be used for the experiments of the tutorial.
+
+\vspace{4mm}
+\noindent
+(\textbf{*}) Since this tutorial deals with web application security, in order to understand common web application vulnerabilities and exploits, we require a buggy web app. Fortunately, we found just what we needed in the form of \texttt{bWAPP}, a deliberately and insecurely developed web app, which has 100 bugs/vulnerabilities in it. 
+
+\vspace{6mm}
+\noindent
+\label{UbuntuSetup}
+\textbf{Ubuntu VMs setup advise:} Though this tutorial can be executed with any Ubuntu operating system compatible with \texttt{bWAPP}, we have tested the code and functionality on Ubuntu 16.04 LTS only and cannot guarantee if the tutorial's code works on other versions. 
+
+\vspace{4mm}
+\noindent
+Once the vanilla installation of Ubuntu 16.04 LTS finishes, the user of this tutorial is strongly encouraged to install \texttt{bWAPP} right away. LAMP is a pre-requisite for \texttt{bWAPP} to function, so that is required to be installed beforehand. 
+
+\vspace{6mm}
+\noindent
+\textbf{Note:} Please go to part \textbf{\underline{\ref{SoftwareResourceLocations}}} of the {\textbf{\hyperref[slide 22]{\underline{Appendix}}}} section for a guide on how to install LAMP stack on Ubuntu 16.04 and also for resources and website links to access some of the required software packages for the tutorial.  
+
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Problem Statement}{\hyperref[slide 3]{\textless}\hyperref[slide 5]{\textgreater}}
+	%\vskip 10 pt
+	\vspace{2mm}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item { XSS attack can be performed on any web application, where injection of any malicious script can lead to either: access of cookies, or session tokens, or other sensitive information, which is retained by the web browser.}
+			\item { CSRF attacks can be performed with a little help of social engineering (such as sending a malicious web-link via email or chat), specifically targeting state-changing requests, not theft of data, where an attacker may trick the users of a web application into executing actions of the attacker's choosing.}
+			
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+\vspace{2mm}
+
+\ben
+
+\item XSS attack can be performed in any real-world web application, where the end users' web browser has no means to identify that the script should not be trusted, and thus, script will be executed. This causes the malicious script to access cookies, session tokens, or other sensitive information retained by the web browser. Once this information is made accessible to the attacker, it is not long before the attacker is able to exploit user's identity and data.\cite{owasp-XSS}.
+
+\item Cross-Site Request Forgery (CSRF) is an attack that forces an end user to execute unwanted actions on a web application, in which the end user is currently authenticated. CSRF attacks specifically target state-changing requests, and usually do not involve theft of data, since the attacker has no way to see the response to the forged request. 
+
+With a little help of social engineering (such as sending a malicious link via email or chat), an attacker may trick the users of a web application into executing actions of the attacker's choosing. If the victim is a normal user, a successful CSRF attack can force the user to perform state changing requests like transferring funds, changing their email address, and so forth. If the victim is an administrative account, CSRF can compromise the entire web application.\cite{owasp-CSRF}.
+
+\een
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Outline of the Tutorial}{\hyperref[slide 4]{\textless}\hyperref[slide 6]{\textgreater}}
+	%\vskip 10 pt
+	\vspace{2mm}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item {Proposed solutions to the problems discussed in the earlier slide. }
+			\item {Background information regarding XSS and CSRF. }
+			\item {Activities involving observation of attack execution and mitigation. }
+			\item {Challenges enhancing understanding of attacks, followed by mitigations. }
+			\item {Conclusion and Appendix. }
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+\vspace{2mm}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Proposed Solutions}{\hyperref[slide 5]{\textless}\hyperref[slide 7]{\textgreater}}
+\vskip 10 pt
+\vspace{2mm}
+\begin{instructionblock}
+\begin{enumerate}
+	\item { Escaping special symbols before inserting untrusted data into HTML element content (to counter XSS).}
+	\item { Use HTTPOnly cookie flag (to counter XSS).}
+	\item { Validate user-authenticated response multiple times, with either: a CAPTCHA, or use re-authentication, or using a one-time valid token (to counter CSRF)}
+\end{enumerate}
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+\begin{enumerate}
+	\item{PHP uses \textbf{htmlspecialchars} function so as to escape or translate special characters. The translations performed are\cite{php-htmlspecialchars}:
+	\begin{itemize}
+		\item `\&' (ampersand) becomes `\&amp;'
+		\item ` " ' (double quote) becomes `\&quot;' when ENT\_NOQUOTES is not set.
+		\item `` ` " (single quote) becomes `\&\#039;' (or \&apos;) only when ENT\_QUOTES is set. 
+		\item `\textless' (less than) becomes `\&lt;'
+		\item `\textgreater' (greater than) becomes `\&gt;'
+	\end{itemize}		
+	}
+	 
+	\item{	If the HttpOnly flag (optional) is included in the HTTP response header, the cookie cannot be accessed through client side script (again if the browser supports this flag). As a result, even if a cross-site scripting (XSS) flaw exists, and a user accidentally accesses a link that exploits this flaw, the browser (primarily Internet Explorer) will not reveal the cookie to a third party.
+	
+	If a browser does not support HttpOnly and a website attempts to set an HttpOnly cookie, the HttpOnly flag will be ignored by the browser, thus creating a traditional, script accessible cookie. As a result, the cookie (typically your session cookie) becomes vulnerable to theft of modification by malicious script	}
+	
+	OWASP Provides list of XSS (Cross Site Scripting) Prevention Cheat Sheet that can be found in following url:\\
+	\url{https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_\\Prevention_Cheat_Sheet#Bonus_Rule_.231:_Use_HTTPOnly_cookie_flag}
+	
+\end{enumerate}
+
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Related News: Recent Exploits}{\hyperref[slide 6]{\textless}\hyperref[slide 8]{\textgreater}}
+	\vskip 10 pt
+	\vspace{2mm}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item {eBay XSS bug left users vulnerable to an (almost) undetectable phishing attack (13 JAN 201)\cite{ebay-news}}
+			\item {XSS bug in Yahoo Mail could have let attackers take over email accounts(21 JAN 2016)\cite{yahoo-news}}
+			\item {Using a new CSRF Vulnerability, attacker can login to LinkedIn through victim's credentials remotely(24 FEB 2016) \cite{Hacker-news}}
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\ben
+\item The eBay sign-in page includes a URL parameter in its address and the contents of that parameter are written in to the page before it's shown to the user. Unfortunately the page didn't check what was in the URL parameter before including it in the page so a researcher by the name of ``MLT" was able to use it and include his own code alongside eBay’s {\cite{ebay-news}}.
+
+\item A Finnish researcher, Jouko Pynnönen, of the security firm ``Klikki Oy", discovered last month, a Cross-Site Scripting (XSS) vulnerability in Yahoo’s web-mail that would have allowed attackers to fully compromise email accounts just by sending a malicious email.
+
+To have their account taken over, a victim would have only needed to open and view the email. Pynnönen also sent himself another rigged email with a hidden script that covertly sent the receiver's in-box data to an external website.Because the malicious code is in the message's body, the code is executed every time a user opens an email {\cite{yahoo-news}}.
+
+\item According to Rohit Dua, a security researcher based in India, the issue existed in a portal on LinkedIn’s Help Center site. To exploit the issue, a user would've had to sign into LinkedIn, gone to the site's Help forum and started a discussion. By entering in a few lines of code, Dua claims an attacker could've executed script {\cite{Hacker-news}}.
+
+\een
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Background: XSS}{\hyperref[slide 7]{\textless}\hyperref[slide 9]{\textgreater}}
+	\vspace{2mm}
+\begin{instructionblock}
+	Cross-Site Scripting (XSS) attacks occur when:
+\begin{enumerate}
+\item {Data enters a Web application through an untrusted source, most frequently a web request.}
+\item {The data is included in dynamic content that is sent to a web user without being validated for malicious content.}
+\end{enumerate}
+ The severity of these attacks range from a minor annoyance to complete account compromise and/or sabotage.
+\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+
+\ben
+
+\item The malicious content sent to the web browser often takes the form of a segment of JavaScript, but other forms may also include HTML, Flash, or any other type of code that the browser may execute. The variety of attacks based on XSS is almost limitless, but they commonly include transmitting private data, like cookies, or other session information, to the attacker; redirecting the victim to web content controlled by the attacker, or performing other malicious operations on the user's machine using the web site as a scapegoat all the while {\cite{owasp-XSS}}.\\
+
+\item The most severe XSS attacks involve disclosure of the users' session cookie, allowing an attacker to hijack the users' session and take over the account. Other damaging attacks include the disclosure of end user files, installation of Trojan horse programs, redirecting the users to some other page or site, or modify the way a content is presented\cite{owasp-XSS}.
+
+\een
+ 
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak 
+\begin{slide}{Background: CSRF}{\hyperref[slide 8]{\textless}\hyperref[slide 10]{\textgreater}}
+	\vspace{2mm}
+	\begin{instructionblock}
+		Cross-Site Request Forgery (CSRF) attacks occur when:
+		\begin{enumerate}
+			\item {The user is currently authenticated to the site and is tricked to submit a malicious request.}
+			\item {Web application do not use preventive measures that can easily implemented.}
+		\end{enumerate}
+		Such attacks silently submits a ``post" form without letting user know about it, using victim's authenticated session information.
+	\end{instructionblock}
+\end{slide}
+
+\vspace{2mm}
+
+\ben
+
+\item CSRF is an attack that tricks the victim into submitting a malicious request. It inherits the identity and privileges of the victim to perform an undesired function on the victim's behalf. Web browser requests automatically include any credentials associated with the site, such as the user's session cookie, IP address, Windows domain credentials (very uncommon), and so forth. Therefore, if the user is currently authenticated to the website, the site will have no way to distinguish between the forged requests sent by the attacker in the guise of victim and a legitimate request sent by the victim.
+
+\item CSRF attacks target functionality that causes a state change on the server, such as changing the victim's email address or password, or purchasing something. Forcing the victim to retrieve data doesn't benefit an attacker because the attacker doesn't receive the response, the victim does. As such, CSRF attacks target state-changing requests.
+
+It's sometimes possible to store the CSRF attack on the vulnerable website itself. Such vulnerabilities are called ``stored CSRF flaws". This can be accomplished by simply storing an IMG or IFRAME tag in a field that accepts HTML, or by a more complex cross-site scripting attack. If the attack can store a CSRF attack in the site, the severity of the attack is amplified. In particular, the likelihood of attack execution is increased because the victim is more likely to view the page containing the attack than some random page on the Internet. The likelihood is also increased because the victim is sure to be authenticated to the website already\cite{owasp-CSRF}
+
+\een
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak 
+\begin{slide}{Mitigating XSS Attacks}{\hyperref[slide 9]{\textless}\hyperref[slide 11]{\textgreater}}
+	\vspace{2mm}
+	\begin{instructionblock}
+		Using escaping technique:
+		
+		Consider a form that takes in 2 values such that \textbf{\textit{\$firstname = first name}} and \textbf{\textit{\$lastname = last name}}\\
+		
+		For proper sanitization of the input values obtained from the input field, the interpretation can be done as:\\
+		\textbf{\$data = htmlspecialchars(\$data, ENT\_QUOTES, ``UTF-8")}
+		
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent 
+Escaping technique is a mechanism of code sanitizaton wherein, a code request from users will be sanitized (or escaped); which means they are not copied as they are for interpretation, but they are transformed into something relevant, but not dangerous.
+
+\vspace{4mm}
+\noindent 
+For example, PHP uses \textbf{htmlspecialchars} function so as to escape or translate special characters. The translations performed are\cite{php-htmlspecialchars}:
+
+\begin{itemize}
+	\item `\&' (ampersand) becomes `\&amp;'
+	\item ` " ' (double quote) becomes `\&quot;' when ENT\_NOQUOTES is not set.
+	\item `` ` " (single quote) becomes `\&\#039;' (or \&apos;) only when ENT\_QUOTES is set. 
+	\item `\textless' (less than) becomes `\&lt;'
+	\item `\textgreater' (greater than) becomes `\&gt;'
+\end{itemize}		
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Questions: XSS}{\hyperref[slide 10]{\textless}\hyperref[slide 12]{\textgreater}}
+	\vspace{2mm}
+	\begin{instructionblock}
+		\begin{enumerate} 
+		\item[Q1.] What is the most basic indication that a cross-site scripting attack might be possible on a web site?
+		\item[Q2.] What is one example of a language that can be leveraged in an XSS attack?
+		\item[Q3.] If the languages can be leveraged in an XSS attacks, what shall we do then? Never use such languages?  
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+\vfill
+\noindent
+\textbf{Answer to Q1:} The existence of a user-input form indicates the possibility of script injection if the user input is echoed back on a web page.\\  
+
+\noindent
+\textbf{Answer to Q2:} Some common scripting languages used in XSS attacks are JavaScript and ActiveX.\\
+
+\noindent
+\textbf{Answer to Q3:} Use mitigation techniques that we discussed earlier.
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+%\pagebreak
+%\begin{slide}{Platform for the tutorial:}{\hyperref[slide 8]{\textless}\hyperref[slide 10]{\textgreater}}
+%	\vspace{2mm}
+%	\begin{instructionblock}
+%		1. Login to Ubuntu VM
+%		\begin{itemize}
+%			\item Username: RADICL
+%			\item Password: Password1
+%		\end{itemize}
+%		2. Open Firefox\\\\
+%		3. Browse to \url{ http://www.bwapp.com}
+%	\end{instructionblock}
+%\end{slide}
+%\vspace{2mm}
+%\noindent
+%We will be using a buggy web application called bwapp. Both the application and the VM can be downloaded from : \url{http://users.telenet.be/mmeit/bwapp/download.htm}\\
+%
+%\noindent
+%For this tutorial, we utilized the existing VM prepared by Prajjwol and Nagarjuna for the Web Authentication Tutorial.
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Activity I: XSS Attack}{\hyperref[slide 11]{\textless}\hyperref[slide 13]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item Go to \url{http://www.bwapp.com/login.php}
+			\item Login: bee      Password: bug
+			\item From ``Choose your bug:" drop-down list, select ``Cross-Site Scripting - Reflected (GET)"
+			\item Set security level to \textbf{low} and click \textbf{Hack}
+			\item Provide different combinations of first name and last name and look for the potential vulnerability.
+		\end{enumerate}
+	\end{instructionblock}	
+\end{slide}
+
+\vspace{4mm}
+\noindent 
+\textbf{NOTE:} From this point onwards, the activity part begins. To see the VM setup directions, please visit \hyperref[slide 3]{\textbf{\underline{Slide 3}}}
+
+\vspace{4mm}
+\noindent
+This activity demonstrates an XSS-attack in its' most simple form; which is to inject a script into the input field, which will then be used to exploit the XSS-vulnerability. The following combinations of input data can be used to see the difference between a normal login and a an attack attempt at injecting malicious script.
+
+\vspace{4mm}
+\noindent 
+\textbf{Combination 1}\\
+First Name: Joe\\
+Last Name: Vandal\\
+\textbf{Output Result:} ``Welcome Joe Vandal" 
+
+\vspace{5mm}
+\noindent 
+\textbf{Combination 2}\\
+First Name: Joe\\
+Last Name: Vandal \textless script\textgreater alert(H@CKT); \textless/script\textgreater\\
+\textbf{Output Result:} ``Welcome Joe Vandal"; along with an alert (pop-up box) containing the text `H@CKT'. 
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge I: Modified XSS Attack}{\hyperref[slide 12]{\textless}\hyperref[slide 14]{\textgreater}}
+	\vspace{2mm}
+	\begin{instructionblock}
+		As a continuation to previous activity, try to inject some input parameters such that
+		\begin{enumerate}
+			\item  Inputs values are returned back to the user itself with the welcome message as follows:\\
+			\textit{Welcome Joe Vandal \textbf{Congratulations!!! Click here to see your prizes!!!}}
+			\item When user performs mouse-over action on \textit{\textbf{Congratulations!!! Click here to see your prizes!!!}}, it displays cookie information for the user as an alert. 
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\vspace{5mm}
+\vfill
+\noindent
+\textbf{Hint 1:}\\
+Append the string \textit{\textbf{Congratulations!!! Click here to see your prizes!!!}} after the Last Name\\
+\noindent
+\textbf{Hint 2:}\\
+Cookie information can be obtained from \textbf{document.cookie}, use \textbf{onmouseover} action to \textbf{alert} the cookie information\\
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge II: Mitigate Challenge I Attack}{\hyperref[slide 13]{\textless}\hyperref[slide 15]{\textgreater}}
+	\vspace{2mm}
+	\begin{instructionblock}
+		Try sanitizing inputs such that the scripts you executed in the challenge 1 acts just as a normal script\\
+		
+		For this challenge, the equivalent php file is located at:
+		\textit{$/var/www/html/www.bwapp.com/public\_html/xss\_get.php$}\\
+		
+	\end{instructionblock}
+\end{slide}
+
+\vspace{4mm}
+\noindent
+In this challenge, we have to mitigate the attack developed in Challenge 1.
+
+\vspace{2mm}
+\noindent
+\textbf{Hint:}
+\begin{enumerate}
+	\item Consider \textbf{case 0} to be the one with low security level
+	\item Remember the \textbf{Mitigation} slide which talks about input sanitization
+	\item Use \textbf{htmlspecialchars} function to sanitize user inputs 
+\end{enumerate}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Activity II: CSRF Attack Part I}{\hyperref[slide 14]{\textless}\hyperref[slide 16]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+						\item From ``Choose your bug:" drop-down list, select ``Cross-Site Request Forgery(Change Password)"
+						\item Set security level to \textbf{low} and click \textbf{Hack}
+						\item Change the password from ``bug" to something else. You should be able to do it.
+						\item Right Click on the browser and view the source of the webpage.
+						\item Copy Web content as shown below
+						
+		\end{enumerate}
+	\end{instructionblock}	
+\end{slide}
+
+\vspace{4mm}
+\noindent
+This activity involves demonstration of a common CSRF attack. The goal of this activity is to modify passwords using a cross site request forgery.
+
+\vspace{2mm}
+\noindent
+\vfill
+ 
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+<h1>CSRF (Change Password)</h1>
+
+<p>Change your password.</p>
+
+<form action="/bWAPP/csrf_1.php" method="GET">
+
+	<p><label for="password_new">New password:</label><br />
+	<input type="password" id="passwrd_new" name="password_new"></p>
+
+	<p><label for="password_conf">Re-type new password:</label><br />
+	<input type="password" id="password_conf" name="password_conf"></p>  
+
+	<button type="submit" name="action" value="change">Change</button>   
+
+</form>
+\end{lstlisting}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Activity II: CSRF Attack Part II}{\hyperref[slide 15]{\textless}\hyperref[slide 17]{\textgreater}}
+	\begin{instructionblock}
+		
+		\begin{enumerate}
+			\item Modify the copied content as shown in the notes section below. Note the following changes:
+			\begin{enumerate}
+				\item action field in the form tag
+				\item addition of value attributes in the input tags
+			\end{enumerate}
+			\item Save it as html file in desktop
+			\item Open the html file and press \textbf{Change}
+		\end{enumerate}
+		Attackers tend to execute such process in the background silently where your password is being compromised secretly.
+	\end{instructionblock}	
+\end{slide}
+
+\vspace{2mm}
+\noindent 
+\vfill
+
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+<h1>CSRF (Change Password)</h1>
+
+	<p>Change your password.</p>
+
+	<form action="http://www.bwapp.com/csrf_1.php?" method="GET">
+
+		<p><label for="password_new">New password:</label><br />
+		<input type="password" id="password_new" name="password_new" value = "bug" ></p>
+
+		<p><label for="password_conf">Re-type new password:</label><br />
+		<input type="password" id="password_conf" name="password_conf" value = "bug" ></p>  
+
+		<button type="submit" name="action" value="change">Change</button>   
+
+	</form>
+
+\end{lstlisting}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge III: Modified CSRF Attack}{\hyperref[slide 16]{\textless}\hyperref[slide 18]{\textgreater}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item From \textbf{Choose your bug}, select \textbf{Cross-Site Request Forgery(Change Secret)}
+			\item Set security level to \textbf{low} and then press \textbf{Hack}
+			\item As we did in previous tutorial, create a HTML page that can be injected using CSRF, and execute that html page such that it changes the secret statement to something else.
+		\end{enumerate}
+	\end{instructionblock}	
+\end{slide}
+
+
+
+\vfill
+\vspace{2mm}
+\noindent 
+\textbf{Hint:}
+This challenge involves changing the secret statement of a user, by employing cross site request forgery mechanism. You'll have to create a new HTML page, based on the following code:  
+
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+<h1>CSRF (Change Secret)</h1>
+
+	<p>Change your secret.</p>
+
+	<form action="/bWAPP/csrf_3.php" method="POST">
+
+		<p><label for="secret">New secret:</label><br />
+		<input type="text" id="secret" name="secret"></p>
+
+		<input type="hidden" name="login" value="bee">
+
+		<button type="submit" name="action" value="change">Change</button>
+
+	</form>
+\end{lstlisting}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Questions: CSRF}{\hyperref[slide 17]{\textless}\hyperref[slide 19]{\textgreater}}
+	\begin{instructionblock}
+		What was the problem with in the following pages? 
+		\begin{enumerate}
+			\item Page where the password was changed
+			\item Page where the secret was changed
+		\end{enumerate}
+		Can you think about the ways to mitigate the problems in the above pages?
+	\end{instructionblock}	
+\end{slide}
+
+\vspace{2mm}
+\noindent
+\vfill
+\textbf{Answer:}\\
+\begin{enumerate}
+	\item For the page where we changed the password, there is no re-authentication process in place when the password was changed. It can be changed such that there is some re-authentication process implemented while trying to change the password 
+	\item For the page where we changed the secret, it is annoying if we were to re-authenticate then as well. So we will be using one-time tokens so as to mitigate this attack  
+\end{enumerate}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Mitigating Attack from Activity II}{\hyperref[slide 18]{\textless}\hyperref[slide 20]{\textgreater}}
+	\begin{instructionblock}
+		We will be adding current password input field to this form
+		\begin{enumerate}
+			\item Go to the \textbf{csrf\_1.php} page located in \textit{/var/www/html/www.bwapp.com/public\_html/}
+			\item Search for the location in code, where the new passwords are retrieved and added to the database.
+			\item Uncomment the code that enables current password checking.
+			\item Go the html construct down below and uncomment the component that is supposed to display ``Current Password" field. 
+		\end{enumerate}
+	\end{instructionblock}	
+\end{slide}
+
+\vspace{4mm}
+\noindent
+To mitigate this attack of exploiting new password allocation, we will be including the current password field which will be asking for the current password and verify if the current password is valid or not(attacker should have the knowledge of current password as well so as to attack in the same way as it was working before)
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Challenge IV: Mitigate Challenge III Attack}{\hyperref[slide 19]{\textless}\hyperref[slide 21]{\textgreater}}
+	\begin{instructionblock}
+		Use one-time token implementation such that the system uses tokens that change as per the session and thus, grabbing tokens from the web-application of the target victim doesn't work
+		\begin{itemize}
+			\item The page associated with this challenge is \textbf{csrf\_3.php} located in \textit{/var/www/html/www.bwapp.com/public\_html/} 
+		\end{itemize}
+	\end{instructionblock}	
+\end{slide}
+
+
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+
+\pagebreak
+\begin{slide}{Conclusions}{\hyperref[slide 20]{\textless}\hyperref[slide 22]{\textgreater}}
+	\begin{instructionblock}
+		\begin{itemize}
+			\item Both XXS and CSRF are still a major concern for web application security.
+			\item Solutions to the problem are: proper input validation, special character encoding, and proper authentication of the user and session. 
+			\item Despite solutions, why are XSS and CSRF still a concern?
+			\begin{itemize}
+				\item Lack of expertise implementing the secured web application and security not being a high priority in comparison to product delivery.
+			\end{itemize}
+		\end{itemize}
+	\end{instructionblock}	
+\end{slide}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%	
+
+
+
+
+\pagebreak	
+\begin{slide}{Appendix: Solutions and Change-log}{\hyperref[slide 21]{\textless}}
+	\begin{instructionblock}
+		\begin{enumerate}
+			\item {Solutions to the challenges}
+				\ben
+					\item Challenge I
+					\item Challenge II
+					\item Challenge III
+					\item Challenge IV
+				\een
+			\item {Tutorial-Related Resources}
+			\item {Change-Log}
+		\end{enumerate}
+	\end{instructionblock}
+\end{slide}
+
+\ben
+
+\item \textbf{Solutions to the Challenges:}	
+
+\ben
+
+\vspace{4mm}
+\item \textbf{Challenge I:}
+
+First Name: ABC\\
+Last Name: def \textless b onmouseover=alert(document.cookie)\textgreater Congratulations!!! Click here to see your prizes!!! \textless/b\textgreater
+
+
+\vspace{8mm}
+\item \textbf{Challenge II:}
+
+In xss\_get.php file, update case 0 such that\\
+Original implementation:\\
+\textbf{\$data = no\_check(\$data);\\}
+Correct Implementation:\\
+\textbf{\$data = htmlspecialchars(\$data, ENT\_QUOTES, ``UTF-8");} 
+
+\vspace{8mm}
+\item \textbf{Challenge III:}\\
+
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+<div id="main">
+	<h1>CSRF (Change Secret)</h1>
+	<p>Change your secret.</p>
+	<form action="http://www.bwapp.com/csrf_3.php" method="POST">
+		<p><label for="secret">New secret:</label><br />
+		<input type="text" id="secret" name="secret" value="Your Secret has been changed"></p>
+		<input type="hidden" name="login" value="bee">
+		<button type="submit" name="action" value="change">Change</button>
+	</form>
+	</br>
+	<font color="green">The secret has been changed!</font>    
+</div>
+\end{lstlisting}
+
+\vspace{8mm}
+\item \textbf{Challenge IV:}\\
+
+1. Replace 
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+if(isset($_REQUEST["login"]) && $_REQUEST["login"])
+\end{lstlisting}
+By
+\begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
+if(isset($_REQUEST["token"]) and isset($_SESSION["token"]) and $_REQUEST["token"] == $_SESSION["token"])
+\end{lstlisting}
+2. You might want to change message from \textbf{Invalid Login!} to \textbf{Invalid token!}\\
+3. Uncomment line 62 and 63 to generate unique token\\
+4. Right after the hidden \textbf{login} element, create a hidden \textbf{token} element as follows:
+\begin{lstlisting}[basicstyle=\small, language=html, breaklines=true]
+<input type = "hidden" id="token" name="token" value="<?php echo $_SESSION['token']?>"> \end{lstlisting}  
+
+\een
+
+
+\pagebreak
+
+\item \textbf{Tutorial-Related Resources:}
+\label{SoftwareResourceLocations}
+
+A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{CLICK ME}}.
+
+Ubuntu 16.04 LTS - Canonical Ltd. - \href{http://releases.ubuntu.com/16.04/}{\underline{CLICK ME}} 
+
+Guide to Installing LAMP on Ubuntu 16.04 LTS - DigitalOcean - \href{https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-16-04}{\underline{CLICK ME}}
+
+\texttt{bWAPP} by Malik Mesellem - SourceForge - \href{https://sourceforge.net/projects/bwapp/files/bWAPP/}{\underline{CLICK ME}}
+
+\vspace{8mm}
+\item \textbf{Change-Log:}
+\label{changelog}
+
+\vspace{6mm}
+
+{
+	\begin{tabular}{ |p{1cm}|p{3cm}|p{3cm}|p{3cm}|  }
+		\hline
+		\multicolumn{4}{|c|}{Web Application Security} \\
+		\hline
+		\texttt{\textbf{Ver.}} & \texttt{\textbf{Date}} & \texttt{\textbf{Authors}} & \texttt{\textbf{Changes}} \\
+		\hline
+		v1 & Apr. 23rd 2016 & Risab Manandhar & First draft of tutorial. \\
+		\hline
+		v2 & July 18th 2016 & Ananth Jillepalli & Major content additions and remodeled the structure. \\
+		\hline
+		v2.1 & \today & Ananth Jillepalli & Added the `Appendix' section and other minor enhancements. \\
+		\hline
+	\end{tabular}
+}
+
+\een
+	
+	
+%------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
+
+% bibliography on last page
+\pagebreak
+% this style of bibliography shows urls
+\bibliographystyle{IEEEtran}
+\begin{thebibliography}{99}
+\bibitem{owasp-XSS}
+``Cross-site Scripting (XSS)", last accessed 11th Apr. 2016, \url{https://www.owasp.org/index.php/Cross-site\_Scripting\_(XSS)}
+\bibitem{owasp-CSRF}
+``Cross-Site Request Forgery (CSRF)", last accessed 11th Apr. 2016, \url{https://www.owasp.org/index.php/Cross-Site\_Request\_Forgery\_(CSRF)}
+\bibitem{bwapp}
+``bWAPP an extremely buggy web app !”, last accessed 10th Apr. 2016, \url{http://www.itsecgames.com/}
+\bibitem{ebay-news}
+``eBay XSS bug left users vulnerable to (almost) undetectable phishing attacks", last accessed 11th Apr. 2016, 
+\url{https://nakedsecurity.sophos.com/2016/01/13/ebay-xss-bug-left-users-vulnerable-to-almost-undetectable-phi\\shing-attacks/}
+
+\bibitem{yahoo-news}
+Lisa Vaas, ``XSS bug in Yahoo Mail could have let attackers take over email accounts", last accessed 11th Apr. 2016, \url{https://nakedsecurity.sophos.com/2016/01/21/xss-bug-in-yahoo-mail-could-have-let-attackers-take-over-emai\\l-accounts/}
+
+\bibitem{Hacker-news}
+Eric Tjossem, ``Hacker News CSRF Vulnerability", last accessed 11th Apr. 2016, 
+\url{http://www.tjosse.me/articles/csrf-on-hn/}
+
+\bibitem{php-htmlspecialchars}
+``htmlspecialchars", last accessed 11th Apr. 2016, \url{http://php.net/manual/en/function.htmlspecialchars.php}
+
+\bibitem{reference}
+Anup C., Joe F., '`Cross-Site Scripting Tutorial", last accessed 11th Apr. 2016
+
+\end{thebibliography}
+
+\end{document}
