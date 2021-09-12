@@ -1,0 +1,243 @@
+firewall {
+    all-ping enable
+    broadcast-ping disable
+    config-trap disable
+    ipv6-receive-redirects disable
+    ipv6-src-route disable
+    ip-src-route disable
+    log-martians enable
+    name IndCtrlSys {
+        default-action drop
+        rule 1 {
+            action accept
+            source {
+                address 192.168.1.3
+            }
+        }
+    }
+    name Tech {
+        default-action accept
+        rule 1 {
+            action drop
+            destination {
+                address 192.168.3.0-192.168.3.255
+            }
+        }
+    }
+    name WiFi {
+        default-action drop
+        rule 1 {
+            action accept
+            destination {
+                address 192.168.4.2
+            }
+        }
+        rule 2 {
+            action accept
+            destination {
+                address 192.168.0.0-192.168.0.255
+                port 80,443
+            }
+            protocol tcp_udp
+        }
+    }
+    name WrkSta {
+        default-action accept
+        rule 1 {
+            action drop
+            destination {
+                address 192.168.2.0-192.168.2.255
+            }
+        }
+        rule 2 {
+            action drop
+            destination {
+                address 192.168.3.2
+            }
+            source {
+                address !192.168.1.3
+            }
+        }
+    }
+    receive-redirects disable
+    send-redirects enable
+    source-validation disable
+    syn-cookies enable
+    twa-hazards-protection disable
+}
+interfaces {
+    ethernet eth0 {
+        address 192.168.0.1/24
+        description Outside
+        duplex auto
+        hw-id 00:50:56:8c:ad:c4
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth1 {
+        address 192.168.1.1/24
+        description Window
+        duplex auto
+        firewall {
+            in {
+                name WrkSta
+            }
+        }
+        hw-id 00:50:56:8c:47:61
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth2 {
+        address 192.168.2.1/24
+        description IT
+        duplex auto
+        firewall {
+            in {
+                name Tech
+            }
+        }
+        hw-id 00:50:56:8c:b7:a3
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth3 {
+        address 192.168.3.1/24
+        description ICS
+        duplex auto
+        firewall {
+            out {
+                name IndCtrlSys
+            }
+        }
+        hw-id 00:50:56:8c:53:30
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth4 {
+        address 192.168.4.1/24
+        description Web
+        duplex auto
+        hw-id 00:50:56:8c:d8:51
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth5 {
+        address 192.168.5.1/24
+        description WiFi
+        duplex auto
+        firewall {
+            in {
+                name WiFi
+            }
+        }
+        hw-id 00:50:56:8c:2e:14
+        smp_affinity auto
+        speed auto
+    }
+    loopback lo
+}
+nat {
+    destination {
+        rule 9 {
+            destination {
+                address 192.168.0.1
+                port 443
+            }
+            inbound-interface eth0
+            protocol tcp_udp
+            translation {
+                address 192.168.4.2
+                port 5900
+            }
+        }
+        rule 10 {
+            destination {
+                address 192.168.0.1
+                port 80
+            }
+            inbound-interface eth0
+            protocol tcp_udp
+            translation {
+                address 192.168.4.2
+            }
+        }
+        rule 11 {
+            destination {
+                address !192.168.0.1
+            }
+            inbound-interface eth0
+            translation {
+                address 192.168.6.6
+            }
+        }
+    }
+}
+service {
+    ssh {
+        listen-address 192.168.1.1
+        port 911
+    }
+}
+system {
+    config-management {
+        commit-revisions 20
+    }
+    console {
+    }
+    host-name vyos
+    ipv6 {
+        blacklist {
+        }
+    }
+    login {
+        user duck {
+            authentication {
+                encrypted-password $6$rmbf4mXp.Z$MmWOlvZhvudiOcR/GWu.0IeSjeMIClZW/tlVap8ycmOYARQuBn3ONrWtU1pVbEqY5qMjmOKZfoe5WRij1fOx.1
+                plaintext-password ""
+            }
+            level admin
+        }
+        user franku {
+            authentication {
+                encrypted-password $6$0SYl.ICncWx19V$Aliz3ObuIjjzqwAVAEvnnGBxut6eC/pIC27cyHP7B8Bqj4y7r5fycU7tYJ4MZjiqzXS0SxTPQSh7FA6TarcI6/
+                plaintext-password ""
+            }
+            full-name "James Franku"
+            level operator
+        }
+    }
+    name-server 8.8.8.8
+    ntp {
+        server 0.pool.ntp.org
+        server 1.pool.ntp.org
+        server 2.pool.ntp.org
+        server time-c.nist.gov {
+            prefer {
+            }
+        }
+    }
+    package {
+        auto-sync 1
+        repository community {
+            components main
+            distribution helium
+            password ""
+            url http://packages.vyos.net/vyos
+            username ""
+        }
+    }
+    syslog {
+        global {
+            facility all {
+                level notice
+            }
+            facility protocols {
+                level debug
+            }
+        }
+    }
+    time-zone UTC
+}
+/* Warning: Do not remove the following line. */
+/* === vyatta-config-version: "cluster@1:firewall@5:conntrack@1:system@6:webproxy@1:config-management@1:conntrack-sync@1:wanloadbalance@3:zone-policy@1:nat@4:ipsec@4:dhcp-relay@1:cron@1:dhcp-server@4:vrrp@1:quagga@2:qos@1:webgui@1" === */
+/* Release version: VyOS 1.1.7 */
