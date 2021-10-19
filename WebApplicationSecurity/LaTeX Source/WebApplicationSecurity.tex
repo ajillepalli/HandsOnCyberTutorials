@@ -61,7 +61,7 @@
 % declare a "slide" text box for use in the document
 % the slide is a numbered \section{}
 \newtcolorbox[auto counter]{slide}[3][]{%
-colback=brown!5!white,colframe=brown!80!gray,height=3.72in,
+colback=brown!5!white,colframe=brown!80!gray,height=4.32in,
 title={\addcontentsline{toc}{section}{\thetcbcounter ~~ #2}\bf\Large\thetcbcounter ~ #2\hfill #3 \label{slide \thetcbcounter}\setcounter{section}{\thetcbcounter}}}
 % declare a "subslide" text box for use in the document
 % the subslide is a numbered \subsection{}
@@ -82,7 +82,7 @@ title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbco
 \begin{document}
 \title{ Web Application Security\\XSS and CSRF injections and mitigations}
 \author{Ananth Jillepalli \& Risab Manandhar}
-\date{\today \\ \hyperref[changelog]{Version 2.2}}
+\date{\today \\ \hyperref[changelog]{Version 2.3}}
 \renewcommand{\abstractname}{Summary}
 \begin{titlepage}
 \maketitle
@@ -750,12 +750,13 @@ This challenge involves changing the secret statement of a user, by employing cr
 \pagebreak
 \begin{slide}{Mitigating Attack from Activity II}{\hyperref[slide 18]{\textless}\hyperref[slide 20]{\textgreater}}
 	\begin{instructionblock}
-		We will be adding current password input field to this form
+		{We will be adding current password input field to this form}
 		\begin{enumerate}
-			\item Go to the \textbf{csrf\_1.php} page located in \textit{/var/www/html/www.bwapp.com/public\_html/}
-			\item Search for the location in code, where the new passwords are retrieved and added to the database.
-			\item Uncomment the code that enables current password checking.
-			\item Go the html construct down below and uncomment the component that is supposed to display ``Current Password" field. 
+			{\item Go to the \textbf{csrf\_1.php} page located in \textit{/var/www/html/www.bWAPP.com/public\_html/}\newline
+			\textbf{*}}
+			{\item Search for the location in code, where the new passwords are retrieved and added to the database}.
+			{\item Uncomment the code that enables current password checking\textbf{$\dagger$}}.
+			{\item Go the html construct down below and uncomment the component that is supposed to display ``Current Password" field\textbf{$\dagger$}}. 
 		\end{enumerate}
 	\end{instructionblock}	
 \end{slide}
@@ -763,6 +764,17 @@ This challenge involves changing the secret statement of a user, by employing cr
 \vspace{4mm}
 \noindent
 To mitigate this attack of exploiting new password allocation, we will be including the current password field which will be asking for the current password and verify if the current password is valid or not(attacker should have the knowledge of current password as well so as to attack in the same way as it was working before)
+
+\vspace{8mm}
+\noindent
+{Thanks to Tyler Cleveland (Fall 2021 CptS 427 at Washington State University) for the following:}
+\begin{itemize}
+	\item {\textbf{*} This location could instead be \textit{/var/www/html/bWAPP/bWAPP/}}
+	\item {\textbf{$\dagger$}Once the corresponding code lines are identified, one may find that they are already uncommented. }
+	\item {The Security Level setting needs to be changed to a value that's medium or high (i.e. not \textbf{low}) for the mitigation to work. }
+\end{itemize}
+
+
 
 
 %------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
@@ -773,11 +785,19 @@ To mitigate this attack of exploiting new password allocation, we will be includ
 	\begin{instructionblock}
 		Use one-time token implementation such that the system uses tokens that change as per the session and thus, grabbing tokens from the web-application of the target victim doesn't work
 		\begin{itemize}
-			\item The page associated with this challenge is \textbf{csrf\_3.php} located in \textit{/var/www/html/www.bwapp.com/public\_html/} 
+			\item The page associated with this challenge is \textbf{csrf\_3.php} located in \textit{/var/www/html/www.bwapp.com/public\_html/}
+			\textbf{*} 
 		\end{itemize}
 	\end{instructionblock}	
 \end{slide}
 
+\vspace{8mm}
+\noindent
+{Thanks to Tyler Cleveland (Fall 2021 CptS 427 at Washington State University) for the following:}
+\begin{itemize}
+	\item {\textbf{*} This location could instead be \textit{/var/www/html/bWAPP/bWAPP/}}
+	\item {The solution for this challenge has been updated as of \today.}
+\end{itemize}
 
 %------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------%
 
@@ -862,17 +882,21 @@ Correct Implementation:\\
 \vspace{8mm}
 \item \textbf{Challenge IV:}\\
 
-1. Replace 
+{Change the security from low to medium or high and repeat the activity. Observe the following changes in the code workflow of the \textbf{csrf.php} file:}
+
+1. Instead of
 \begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
 if(isset($_REQUEST["login"]) && $_REQUEST["login"])
 \end{lstlisting}
-By
+we see the following code gets executed:
 \begin{lstlisting}[basicstyle=\small, language=php, breaklines=true]
 if(isset($_REQUEST["token"]) and isset($_SESSION["token"]) and $_REQUEST["token"] == $_SESSION["token"])
 \end{lstlisting}
-2. You might want to change message from \textbf{Invalid Login!} to \textbf{Invalid token!}\\
-3. Uncomment line 62 and 63 to generate unique token\\
-4. Right after the hidden \textbf{login} element, create a hidden \textbf{token} element as follows:
+2. Instead of 
+\begin{lstlisting}[basicstyle=\small, language=html, breaklines=true]
+<input type = "hidden" name="login" value="<?php echo $login;?>"> 
+\end{lstlisting} 
+we see the following code gets executed:
 \begin{lstlisting}[basicstyle=\small, language=html, breaklines=true]
 <input type = "hidden" id="token" name="token" value="<?php echo $_SESSION['token']?>"> \end{lstlisting}  
 
@@ -909,9 +933,10 @@ Guide to Installing LAMP on Ubuntu 16.04 LTS - DigitalOcean - \href{https://www.
 		\hline
 		v2 & July 18th 2016 & Ananth Jillepalli & Major content additions and remodeled the structure. \\
 		\hline
-		v2.1 & \today & Ananth Jillepalli & Added the `Appendix' section and other minor enhancements. \\
+		v2.1 & July 26th 2016 & Ananth Jillepalli & Added the `Appendix' section and other minor enhancements. \\
 		\hline
 		v 2.2 & July 31st 2017 & Ananth Jillepalli & Changed the licensing from CC BY-NC-ND 4.0 to CC BY-NC-SA 4.0 \\  \hline
+		v 2.2 & Oct. 19th 2021 & Ananth Jillepalli & Solved inconsistencies \\  \hline
 	\end{tabular}
 }
 
