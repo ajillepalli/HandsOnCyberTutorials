@@ -215,8 +215,8 @@ Due to restrictions on time and manpower resources, we are not able to make the 
 		We recommend having at least the following hardware and software specifications for smooth execution of this tutorial's activities and challenges:
 		\begin{enumerate}
 			\item {A computer which can at least boot 1 virtual machines (VM) smoothly, with no noticeable lag and delay}
-			\item {A functional virtualization software platform. For example, VMWare or VirtualBox.}
-			\item {One vanilla Ubuntu VM (preferably 16.04 LTS) and as an addition, LAMP stack, and \texttt{bWAPP} web application(\textbf{*}).  }
+			\item {A functional virtualization software platform. For example: VMWare, VirtualBox, or UTM.}
+			\item {One vanilla Ubuntu VM (preferably 20.04 LTS) and as an addition, LAMP stack, and \texttt{bWAPP} web application(\textbf{*}).  }
 		\end{enumerate}
 	\end{instructionblock}
 \end{slide}
@@ -232,15 +232,15 @@ Since the tutorial deals with a lot of buggy code and code manipulation, it is h
 \vspace{6mm}
 \noindent
 \label{UbuntuSetup}
-\textbf{Ubuntu VMs setup advise:} Though this tutorial can be executed with any Ubuntu operating system compatible with \texttt{bWAPP}, we have tested the code and functionality on Ubuntu 16.04 LTS only and cannot guarantee if the tutorial's code works on other versions. 
+\textbf{Ubuntu VMs setup advise:} Though this tutorial can be executed with any Ubuntu operating system compatible with \texttt{bWAPP}, we have tested the code and functionality on Ubuntu 20.04 LTS only and cannot guarantee if the tutorial's code works on other versions. 
 
 \vspace{4mm}
 \noindent
-Once the vanilla installation of Ubuntu 16.04 LTS finishes, the user of this tutorial is strongly encouraged to install \texttt{bWAPP} right away. LAMP is a pre-requisite for \texttt{bWAPP} to function, so that is required to be installed beforehand. 
+Once the vanilla installation of Ubuntu 20.04 LTS finishes, the user of this tutorial is strongly encouraged to install \texttt{bWAPP} right away. LAMP is a pre-requisite for \texttt{bWAPP} to function, so that is required to be installed beforehand. 
 
 \vspace{6mm}
 \noindent
-\textbf{Note:} Please go to part \textbf{\underline{\ref{SoftwareResourceLocations}}} of the {\textbf{\hyperref[slide 22]{\underline{Appendix}}}} section for a guide on how to install LAMP stack on Ubuntu 16.04 and also for resources and website links to access some of the required software packages for the tutorial.  
+\textbf{Note:} Please go to part \textbf{\underline{\ref{SoftwareResourceLocations}}} of the {\textbf{\hyperref[slide 22]{\underline{Appendix}}}} section for a guide on how to install LAMP stack on Ubuntu 20.04 and also for resources and website links to access some of the required software packages for the tutorial.  
 
 
 
@@ -910,11 +910,17 @@ we see the following code gets executed:
 
 A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{CLICK ME}}.
 
-Ubuntu 16.04 LTS - Canonical Ltd. - \href{http://releases.ubuntu.com/16.04/}{\underline{CLICK ME}} 
+A free virtualization software platform for M1 processors - UTM - \href{https://mac.getutm.app/gallery/ubuntu-20-04}{\underline{CLICK ME}}.
 
-Guide to Installing LAMP on Ubuntu 16.04 LTS - DigitalOcean - \href{https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-16-04}{\underline{CLICK ME}}
+Ubuntu 20.04 LTS - Canonical Ltd. - \href{https://releases.ubuntu.com/20.04/}{\underline{CLICK ME}} 
+
+Guide to Installing LAMP on Ubuntu 20.04 LTS - DigitalOcean - \href{https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-20-04}{\underline{CLICK ME}}
 
 \texttt{bWAPP} by Malik Mesellem - SourceForge - \href{https://sourceforge.net/projects/bwapp/files/bWAPP/}{\underline{CLICK ME}}
+
+{If you do not configure a server IP address for Apache, the default address would be `localhost', which can be accessed through `http://localhost'.}
+
+{Thanks to Funso Oje (Fall 2021 CptS 427 at Washington State University) for testing the tutorial with 20.04 and for the M1 processor guide link.}
 
 \vspace{8mm}
 \item \textbf{Change-Log:}
@@ -936,7 +942,7 @@ Guide to Installing LAMP on Ubuntu 16.04 LTS - DigitalOcean - \href{https://www.
 		v2.1 & July 26th 2016 & Ananth Jillepalli & Added the `Appendix' section and other minor enhancements. \\
 		\hline
 		v 2.2 & July 31st 2017 & Ananth Jillepalli & Changed the licensing from CC BY-NC-ND 4.0 to CC BY-NC-SA 4.0 \\  \hline
-		v 2.2 & Oct. 19th 2021 & Ananth Jillepalli & Solved inconsistencies \\  \hline
+		v 2.3 & Nov. 05th 2021 & Ananth Jillepalli & Updates and solved inconsistencies \\  \hline
 	\end{tabular}
 }
 
