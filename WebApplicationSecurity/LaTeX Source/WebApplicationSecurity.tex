@@ -82,7 +82,7 @@ title={\addcontentsline{toc}{subsection}{\thetcbcounter ~~ #2}\bf\Large\thetcbco
 \begin{document}
 \title{ Web Application Security\\XSS and CSRF injections and mitigations}
 \author{Ananth Jillepalli \& Risab Manandhar}
-\date{\today \\ \hyperref[changelog]{Version 2.3}}
+\date{\today \\ \hyperref[changelog]{Version 2.4}}
 \renewcommand{\abstractname}{Summary}
 \begin{titlepage}
 \maketitle
@@ -624,7 +624,7 @@ This activity involves demonstration of a common CSRF attack. The goal of this a
 <form action="/bWAPP/csrf_1.php" method="GET">
 
 	<p><label for="password_new">New password:</label><br />
-	<input type="password" id="passwrd_new" name="password_new"></p>
+	<input type="password" id="password_new" name="password_new"></p>
 
 	<p><label for="password_conf">Re-type new password:</label><br />
 	<input type="password" id="password_conf" name="password_conf"></p>  
@@ -908,19 +908,21 @@ we see the following code gets executed:
 \item \textbf{Tutorial-Related Resources:}
 \label{SoftwareResourceLocations}
 
-A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{CLICK ME}}.
+A free virtualization software platform - VirtualBox - \href{https://www.virtualbox.org/wiki/Downloads}{\underline{Download}}.
 
-A free virtualization software platform for M1 processors - UTM - \href{https://mac.getutm.app/gallery/ubuntu-20-04}{\underline{CLICK ME}}.
+A free virtualization software platform for M1 processors - UTM - \href{https://mac.getutm.app/gallery/ubuntu-20-04}{\underline{Download}}{\footnote{{Thanks to Funso Oje (Fall 2021 CptS 427 at Washington State University) for testing the tutorial with 20.04 and for the M1 processor guide link.}}}.
 
-Ubuntu 20.04 LTS - Canonical Ltd. - \href{https://releases.ubuntu.com/20.04/}{\underline{CLICK ME}} 
+Ubuntu 20.04 LTS - Canonical Ltd. - \href{https://releases.ubuntu.com/20.04/}{\underline{Download}} 
 
-Guide to Installing LAMP on Ubuntu 20.04 LTS - DigitalOcean - \href{https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-20-04}{\underline{CLICK ME}}
+Guide to Installing LAMP on Ubuntu 20.04 LTS - DigitalOcean - \href{https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-20-04}{\underline{Read}}
 
-\texttt{bWAPP} by Malik Mesellem - SourceForge - \href{https://sourceforge.net/projects/bwapp/files/bWAPP/}{\underline{CLICK ME}}
+\texttt{bWAPP} by Malik Mesellem - SourceForge - \href{https://sourceforge.net/projects/bwapp/files/bWAPP/}{\underline{Download}}{\footnote{{If you do not configure a server IP address for Apache, the default address would be `localhost', which can be accessed through `http://localhost'.}}}
 
-{If you do not configure a server IP address for Apache, the default address would be `localhost', which can be accessed through `http://localhost'.}
+{Docker image \texttt{bWAPP} - DockerHub \href{https://hub.docker.com/u/hackersploit}{\underline{Image}}}
 
-{Thanks to Funso Oje (Fall 2021 CptS 427 at Washington State University) for testing the tutorial with 20.04 and for the M1 processor guide link.}
+{Docker compose \texttt{bWAPP} - GitHub - \href{https://github.com/boxianglin/bWAPP-dockercompose}{\underline{Compose}}}
+
+{Live hosting for \texttt{bWAPP} - HakHub - \href{https://bwapp.hakhub.net/login.php}{\underline{live app}}}
 
 \vspace{8mm}
 \item \textbf{Change-Log:}
@@ -943,6 +945,7 @@ Guide to Installing LAMP on Ubuntu 20.04 LTS - DigitalOcean - \href{https://www.
 		\hline
 		v 2.2 & July 31st 2017 & Ananth Jillepalli & Changed the licensing from CC BY-NC-ND 4.0 to CC BY-NC-SA 4.0 \\  \hline
 		v 2.3 & Nov. 05th 2021 & Ananth Jillepalli & Updates and solved inconsistencies \\  \hline
+		v 2.4 & Nov. 26th 2021 & Ananth Jillepalli & Added docker and live app options for \texttt{bWAPP} hosting \\  \hline
 	\end{tabular}
 }
 
