@@ -314,9 +314,8 @@ With a little help of social engineering (such as sending a malicious link via e
 	\begin{itemize}
 		\item `\&' (ampersand) becomes `\&amp;'
 		\item ` " ' (double quote) becomes `\&quot;' when ENT\_NOQUOTES is not set.
-		\item `` ` " (single quote) becomes `\&\#039;' (or \&apos;) only when ENT\_QUOTES is set. 
-		\item `\textless' (less than) becomes `\&lt;'
-		\item `\textgreater' (greater than) becomes `\&gt;'
+		\item `` ` " (single quote) becomes `\&\#039;' (or \&apos;) when ENT\_QUOTES is set. 
+		\item `\textless' (less than) becomes `\&lt;' || `\textgreater' (greater than) becomes `\&gt;'
 	\end{itemize}		
 	}
 	 
@@ -325,7 +324,7 @@ With a little help of social engineering (such as sending a malicious link via e
 	If a browser does not support HttpOnly and a website attempts to set an HttpOnly cookie, the HttpOnly flag will be ignored by the browser, thus creating a traditional, script accessible cookie. As a result, the cookie (typically your session cookie) becomes vulnerable to theft of modification by malicious script	}
 	
 	OWASP Provides list of XSS (Cross Site Scripting) Prevention Cheat Sheet that can be found in following url:\\
-	\url{https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_\\Prevention_Cheat_Sheet#Bonus_Rule_.231:_Use_HTTPOnly_cookie_flag}
+	\url{https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html}
 	
 \end{enumerate}
 
